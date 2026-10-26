@@ -8,6 +8,14 @@ Claude Code / Claude desktop plugin marketplace a **Zeuss** könyvelő rendszerh
 
 ## Telepítés
 
+Egy lépésben (Claude Code 2.1.275 vagy újabb):
+
+```
+/plugin install zeuss-konyvelo --marketplace ibookr/zeuss-claude-plugins
+```
+
+Régebbi verzión két lépésben:
+
 ```
 /plugin marketplace add ibookr/zeuss-claude-plugins
 /plugin install zeuss-konyvelo@zeuss

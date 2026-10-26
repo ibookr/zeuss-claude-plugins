@@ -2,6 +2,12 @@
 
 Claude könyvelő-asszisztens a **Zeuss** könyvelő rendszerhez. Szakterületenként egy-egy agent dolgozik a `zeuss` MCP szerver `zeuss_*` eszközeivel. **Mindig csak javaslatot és tervezetet mentenek**, a véglegesítés a könyvelőé a Zeuss felületén.
 
+## Telepítés
+```
+/plugin install zeuss-konyvelo --marketplace ibookr/zeuss-claude-plugins
+```
+Régebbi Claude Code-on: `/plugin marketplace add ibookr/zeuss-claude-plugins`, majd `/plugin install zeuss-konyvelo@zeuss`. A használathoz a `zeuss` MCP szerver is kell (lásd lent: MCP kapcsolat).
+
 ## Összetevők
 
 | Típus | Név | Feladat |
