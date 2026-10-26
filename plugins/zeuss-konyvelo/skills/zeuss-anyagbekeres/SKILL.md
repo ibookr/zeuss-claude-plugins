@@ -106,6 +106,13 @@ Ha a `previous_agent_emails` / `open_email_drafts` szerint 7 napon belül már k
   3. csak a kifejezett „küldd el” / „mehet” válaszára hívd újra ugyanazzal a `draft_id`-vel és a `confirm_code`-dal.
   Subagent soha nem küld. Ha az eszköz nem érhető el (a felhasználó Zeuss-jogosultsága nem engedi a küldést), mondd meg, és add meg a tervezet linkjét.
 
+## 7/b. Eredmény a Havi irányítópultra (minden cégnél, minden futásban)
+Cégenként a végén `zeuss_save_collection_result` (`month`, `missing_count`, `breakdown`, `draft_id`, rövid `note`) – ez adja a Varázsló → Havi irányítópult „Könyvelési anyagok” oszlopát:
+- `missing_count` = az ügyféltől még hiányzó / hibás tételek száma: kép nélküli számlák + hiányzó kivonatok + hibás / újra feltöltendő fájlok + végszámla nélküli díjbekérők + tisztázandó tételek (a levél tételei). A csak könyvelőnek szóló teendő (csatolandó NAV-számla, külföldi számla rögzítése, duplikátum) **nem** hiány.
+- `breakdown`: `missing_invoice_files`, `missing_bank_statements`, `faulty_uploads`, `proformas_without_final`, `clarifications`.
+- `missing_count = 0` (zöld pipa) csak akkor menthető, ha minden kivonatköteles főkönyvi bankszámlához hozzárendelted a hónap PDF kivonatát (`zeuss_save_bank_statement_link`, `kind: statement`) – különben a Zeuss visszadobja. Ez után futtatható a `zeuss-anyagbetolto` agent (kivonatok betöltése, külföldi számlák rögzítése).
+- „Teljes havi kör” része, ütemezett futás, csak helyzetkép – mindig mentsd.
+
 ## 8. Összefoglaló
 Cégenként egy blokk:
 - **Cég / hónap**
@@ -119,7 +126,7 @@ Több cégnél elöl egy rövid táblázat: cég · kép nélküli számla (be/k
 ## 9. Ütemezett (felügyelet nélküli) futás
 Ha ütemezett feladatként futsz (a feladat szövege ezt mondja), senki nem ül a gépnél:
 1. `zeuss_list_companies` → **minden** elérhető cég. A hónap az előző naptári hónap, hacsak a feladat mást nem mond.
-2. Cégenként: `zeuss_start_run` **`task: scheduled_document_collection`** (ettől lesz a levél csak a felületről kiküldhető), majd az 1–6. lépés. Levéltervezetet mentesz, ha van ügyfélnek szóló tétel (ilyenkor nincs „teljes havi kör” kivétel). `zeuss_finish_run`.
+2. Cégenként: `zeuss_start_run` **`task: scheduled_document_collection`** (ettől lesz a levél csak a felületről kiküldhető), majd az 1–6. lépés. Levéltervezetet mentesz, ha van ügyfélnek szóló tétel (ilyenkor nincs „teljes havi kör” kivétel). `zeuss_save_collection_result` (7/b), `zeuss_finish_run`.
 3. **Soha nem hívsz `zeuss_queue_email_draft`-et**, és semmilyen `zeuss_accept_*` eszközt. Kérdést nem teszel fel – ami bizonytalan, az a tervezet `agent_note`-jába és az összefoglalóba kerül.
 4. Egy cég hibája ne állítsa meg a többit: jegyezd fel, és menj tovább.
 5. A végén **egyszer** `zeuss_collection_done`: `month`, `companies_checked`, `draft_ids` (az összes mentett tervezet), `summary_markdown` (táblázat: cég · hiányzó kivonat · ügyfélnek szóló tétel · tervezet id; alatta a könyvelőnek szóló teendők és a hibás cégek). Ez értesíti a könyvelőt, hogy a levelek a **Claude agent → Ügyféllevelek** oldalon jóváhagyásra várnak.
