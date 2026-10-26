@@ -1,12 +1,35 @@
 #!/bin/zsh
-# Új verzió kiadása: ./release.sh 0.4.1 "mi változott"
+# Új verzió kiadása: ./release.sh 0.4.2 "Anyagbekérés: díjbekérők külön blokkban"
 # Emeli a verziót a plugin.json-ban és a marketplace.json-ban, ellenőriz, commitol és feltölt.
+# Leáll, ha a verzió nem nagyobb a mostaninál, vagy a pluginban nem változott semmi.
 set -euo pipefail
 cd "${0:A:h}"
 
-VERSION="${1:?Add meg a verziót, pl. ./release.sh 0.4.1 \"mi változott\"}"
+VERSION="${1:?Add meg a verziót, pl. ./release.sh 0.4.2 \"Anyagbekérés: díjbekérők külön blokkban\"}"
 MESSAGE="${2:-zeuss-konyvelo $VERSION}"
 PLUGIN=plugins/zeuss-konyvelo
+MANIFEST=$PLUGIN/.claude-plugin/plugin.json
+
+# Védelem 1: az új verzió legyen nagyobb a mostaninál
+CURRENT=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$MANIFEST")
+if ! python3 -I -c 'import sys; t=lambda v: tuple(int(x) for x in v.split(".")); sys.exit(0 if t(sys.argv[1]) > t(sys.argv[2]) else 1)' "$VERSION" "$CURRENT"; then
+  echo "Hiba: a(z) $VERSION nem nagyobb a mostani $CURRENT verziónál." >&2
+  exit 1
+fi
+
+# Védelem 2: legyen változás a pluginban az előző kiadás óta (a plugin.json verziósorát nem számítva)
+LAST_RELEASE=$(git log -1 --format=%H -G'"version"' -- "$MANIFEST")
+if git diff --quiet "$LAST_RELEASE" -- "$PLUGIN" ":(exclude)$MANIFEST" \
+   && [[ -z "$(git ls-files --others --exclude-standard -- "$PLUGIN")" ]]; then
+  echo "Hiba: a $PLUGIN mappában nem változott semmi az előző kiadás ($CURRENT) óta." >&2
+  exit 1
+fi
+
+# Védelem 3: ne a példaüzenettel menjen ki
+if [[ "$MESSAGE" == "mi változott" ]]; then
+  echo "Hiba: írd meg röviden, mi változott (2. paraméter)." >&2
+  exit 1
+fi
 
 python3 -I - "$VERSION" "$PLUGIN" <<'EOF'
 import json, sys
