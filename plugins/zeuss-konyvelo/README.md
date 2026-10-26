@@ -34,7 +34,7 @@ Régebbi Claude Code-on: `/plugin marketplace add ibookr/zeuss-claude-plugins`, 
 | Agent | `zeuss-kimutatas-keszito` | → zeuss-kimutatas |
 
 ## Teljes havi kör („csináld meg a szeptembert”)
-1. anyagok + számlaképek → 1/b. anyagbetöltés (ha hiánytalan)
+1. anyagok + számlaképek → 1/b. anyagbetöltés (bankonként, ami megjött)
 2. bankpárosítás ∥ 3. kontírozás – párhuzamosan
 4. NAV-ellenőrzés
 5. zárás-előkészítés (az előzőek összefoglalójára építve)
@@ -42,7 +42,7 @@ Régebbi Claude Code-on: `/plugin marketplace add ibookr/zeuss-claude-plugins`, 
 
 ## Biztonsági elvek
 - Nincs könyvelés, levélküldés, lépés-kipipálás, szabály-bekapcsolás vagy számlamódosítás agentből.
-- Egyetlen kivétel az anyagbetöltő (`zeuss_load_bank_statement`, `zeuss_create_foreign_invoice`): jóváhagyás nélkül tölt be, de csak az anyagbekérő szerint hiánytalan hónapra, és csak ha a Zeuss beépített ellenőrzése hibátlan (kivonat nyitó + tételek = záró, főkönyvi nyitó / záró = kivonat, számlaadatok = számlakép). Külön „anyagbetöltés” (`load`) token-jog kell hozzá.
+- Egyetlen kivétel az anyagbetöltő (`zeuss_load_bank_statement`, `zeuss_create_foreign_invoice`): jóváhagyás nélkül tölt be, bankonként azt, ami már megjött (az anyagbekérő által a bankszámlához rendelt kivonat), duplikálás nélkül, és csak ha a Zeuss beépített ellenőrzése hibátlan (kivonat nyitó + tételek = záró, főkönyvi nyitó / záró = kivonat, számlaadatok = számlakép). Külön „anyagbetöltés” (`load`) token-jog kell hozzá.
 - Az állapot a Zeuss Varázsló → **Havi irányítópult** oldalán cégenként látszik (Könyvelési anyagok, Anyagok betöltése).
 - `zeuss_accept_*` és `zeuss_queue_email_draft` (ügyféllevél → `email_jobs`) csak a főszálból, kétlépcsősen (előnézet → kifejezett „könyveld le” / „küldd el” → confirm_code).
 - A levéltervezetet a könyvelő a felületről is kiküldheti: `email_drafts.php` → „Küldés a Zeuss levelezőjével”.

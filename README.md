@@ -4,7 +4,7 @@ Claude Code / Claude desktop plugin marketplace a **Zeuss** könyvelő rendszerh
 
 | Plugin | Verzió | Leírás |
 |---|---|---|
-| [`zeuss-konyvelo`](plugins/zeuss-konyvelo) | 0.4.1 | Könyvelő-asszisztens: anyagbekérés, anyagbetöltés, bankpárosítás, kontírozás, számlakép, NAV-ellenőr, havi zárás, ügyféllevél, kimutatás |
+| [`zeuss-konyvelo`](plugins/zeuss-konyvelo) | 0.5.0 | Könyvelő-asszisztens: anyagbekérés, anyagbetöltés, bankpárosítás, kontírozás, számlakép, NAV-ellenőr, havi zárás, ügyféllevél, kimutatás |
 
 ## Telepítés
 

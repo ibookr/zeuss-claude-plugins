@@ -1,7 +1,7 @@
 {
   "name": "zeuss-konyvelo",
-  "version": "0.4.1",
-  "description": "Claude könyvelő-asszisztens a Zeuss rendszerhez: szakterületenkénti agentek (anyagbekérés, anyagbetöltés, bankpárosítás, kontírozás, számlakép, NAV-ellenőr, havi zárás, ügyféllevél, kimutatás) a zeuss MCP eszközeivel – javaslatot és tervezetet készítenek, a könyvelő véglegesít; a hiánytalan havi anyagot (kivonatok, külföldi számlák) az anyagbetöltő ellenőrzés után maga tölti be; ügyféllevél a Zeuss levelezőjével (email_jobs), kétlépcsős jóváhagyással.",
+  "version": "0.5.0",
+  "description": "Claude könyvelő-asszisztens a Zeuss rendszerhez: szakterületenkénti agentek (anyagbekérés, anyagbetöltés, bankpárosítás, kontírozás, számlakép, NAV-ellenőr, havi zárás, ügyféllevél, kimutatás) a zeuss MCP eszközeivel – javaslatot és tervezetet készítenek, a könyvelő véglegesít; a beérkezett havi anyagot (kivonatok, külföldi számlák) az anyagbetöltő bankonként, ellenőrzés után maga tölti be; ügyféllevél a Zeuss levelezőjével (email_jobs), kétlépcsős jóváhagyással.",
   "author": {
     "name": "Pap Martin Felicián"
   },

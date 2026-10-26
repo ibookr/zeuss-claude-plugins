@@ -21,7 +21,7 @@ A főszáltól kapott adatokból indulj (cég id, hónap, kérés, előző lép�
 - `fresh` számlaképet (NAV-letöltésre várhat) nem kérsz számon.
 - Levél csak ügyfélnek szóló tételről; a csak könyvelőnek szólók az `agent_note`-ba. 7 napon belüli korábbi kérést nem ismételsz.
 - Ha a főszál azt mondja, hogy teljes havi kör része vagy, ne ments levéltervezetet – add vissza a tételeket.
-- Cégenként a végén **mindig** `zeuss_save_collection_result` (hiányzó / hibás tételek száma, bontással; 0 = hiánytalan, csak ha minden kivonat hozzá van rendelve) – ebből lesz a Havi irányítópult „Könyvelési anyagok” oszlopa, és ez nyitja meg az anyagbetöltést.
+- Cégenként a végén **mindig** `zeuss_save_collection_result` (hiányzó / hibás tételek száma, bontással; 0 = hiánytalan, csak ha minden kivonat hozzá van rendelve) – ebből lesz a Havi irányítópult „Könyvelési anyagok” oszlopa, és a hozzárendelt kivonatokat (`zeuss_save_bank_statement_link`) az anyagbetöltő bankonként betölti, a hónap többi hiányától függetlenül.
 - **Levelet nem küldesz**: `zeuss_queue_email_draft`-et soha nem hívsz; a tervezetet a könyvelő a „Küldés a Zeuss levelezőjével” gombbal, vagy a főszál a felhasználó kifejezett jóváhagyásával teszi az `email_jobs` sorba.
 
 ## Közös szabályok (kötelező)

@@ -110,7 +110,7 @@ Ha a `previous_agent_emails` / `open_email_drafts` szerint 7 napon belül már k
 Cégenként a végén `zeuss_save_collection_result` (`month`, `missing_count`, `breakdown`, `draft_id`, rövid `note`) – ez adja a Varázsló → Havi irányítópult „Könyvelési anyagok” oszlopát:
 - `missing_count` = az ügyféltől még hiányzó / hibás tételek száma: kép nélküli számlák + hiányzó kivonatok + hibás / újra feltöltendő fájlok + végszámla nélküli díjbekérők + tisztázandó tételek (a levél tételei). A csak könyvelőnek szóló teendő (csatolandó NAV-számla, külföldi számla rögzítése, duplikátum) **nem** hiány.
 - `breakdown`: `missing_invoice_files`, `missing_bank_statements`, `faulty_uploads`, `proformas_without_final`, `clarifications`.
-- `missing_count = 0` (zöld pipa) csak akkor menthető, ha minden kivonatköteles főkönyvi bankszámlához hozzárendelted a hónap PDF kivonatát (`zeuss_save_bank_statement_link`, `kind: statement`) – különben a Zeuss visszadobja. Ez után futtatható a `zeuss-anyagbetolto` agent (kivonatok betöltése, külföldi számlák rögzítése).
+- `missing_count = 0` (zöld pipa) csak akkor menthető, ha minden kivonatköteles főkönyvi bankszámlához hozzárendelted a hónap PDF kivonatát (`zeuss_save_bank_statement_link`, `kind: statement`) – különben a Zeuss visszadobja. Az anyagbetöltő (`zeuss-anyagbetolto`) nem vár a 0-ra: a már hozzárendelt kivonatokat bankonként betölti, ezért a megérkezett kivonatot akkor is rendeld hozzá a bankszámlához, ha a hónapból más még hiányzik.
 - „Teljes havi kör” része, ütemezett futás, csak helyzetkép – mindig mentsd.
 
 ## 8. Összefoglaló
