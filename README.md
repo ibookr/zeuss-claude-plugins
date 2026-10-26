@@ -29,6 +29,10 @@ A plugin a Zeuss rendszer **`zeuss` nevű MCP szerverén** keresztül dolgozik, 
 
 Az agentek mindig csak javaslatot és tervezetet mentenek; könyvelni és levelet küldeni csak a könyvelő kifejezett jóváhagyásával lehet.
 
+## Adatkezelés / Data handling
+
+Mit olvas és ír a plugin, hova kerül az adat: [plugin README – Data handling](plugins/zeuss-konyvelo/README.md#data-handling-english). Adatvédelmi szabályzat: https://zeuss.hu/adatkezelesi-es-adatvedelmi-szabalyzat/
+
 ## Licenc
 
 Zárt licenc – lásd [LICENSE](LICENSE).

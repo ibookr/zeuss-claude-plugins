@@ -50,3 +50,20 @@ A plugin a **`zeuss` nevű MCP szervert** használja, amely a Claude desktop alk
 1. Állítsd be a `zeuss` MCP szervert a Claude desktopban a saját, személyes agent-tokeneddel.
 2. A szerver neve legyen pontosan `zeuss`, és az eszközök neve `zeuss_*` – a skillek és az agentek ezekre hivatkoznak.
 3. Az írási eszközök (`zeuss_start_run`, `zeuss_save_*`, `zeuss_audit_run`, `zeuss_audit_assess`, `zeuss_closing_save`, `zeuss_save_office_brief`, `zeuss_save_email_draft`, `zeuss_save_report`, `zeuss_save_document_extraction`, `zeuss_save_bank_statement_link`) a token jogosultságától függenek. A `zeuss_queue_email_draft` `send` jogú tokent és `ZEUSS_ALLOW_COMMIT=1`-et kér (MCP szerver ≥ 1.9.0, agent API ≥ 1.6.0). Ha valamelyik hiányzik, az agent a javaslatot szövegben adja vissza.
+
+## Data handling (English)
+
+**What the plugin is.** Markdown skills and subagents only. It ships no MCP server, scripts, hooks or binaries, and it makes no network calls of its own.
+
+**Which service it talks to.** All data access goes through the user's own **Zeuss MCP server** (server name `zeuss`, tools `zeuss_*`). The user configures that server separately in Claude, with a personal Zeuss agent token. Zeuss is a Hungarian accounting-office system operated by IBOOKR; the token only grants access to the companies that user's account can see.
+
+**What it reads** (from Zeuss, via `zeuss_*` tools): client companies, bank statement items, invoices and invoice images, ledger accounts, partners, open tasks and reports. This includes personal data of the accounting firm's clients and their business partners: names, e-mail addresses, postal addresses, tax numbers, bank transaction details.
+
+**What it writes** (back into the same Zeuss account): matching, posting and booking *suggestions*, document extraction results, audit and month-end closing notes, reports, office briefs and client e-mail *drafts*. Suggestions are not final: an accountant reviews them in the Zeuss UI. The `zeuss_accept_*` tools (final booking/matching) and `zeuss_queue_email_draft` (hands a client e-mail to Zeuss's own mailer) are only used after an explicit two-step confirmation from the user in the main conversation, never by a subagent.
+
+**Where data goes.** Only to Claude (for processing the conversation) and to the user's Zeuss account. No third-party services. Client e-mails, when the user approves sending, are delivered by the Zeuss mail system, not by the plugin.
+
+**Retention.** The plugin itself stores nothing. Data written to Zeuss is kept in the user's Zeuss account as part of the accounting records, subject to the Zeuss privacy policy and statutory record-keeping periods (8 years for accounting documents in Hungary).
+
+**Privacy policy:** https://zeuss.hu/adatkezelesi-es-adatvedelmi-szabalyzat/
+**Contact:** IBOOKR, via https://zeuss.hu
