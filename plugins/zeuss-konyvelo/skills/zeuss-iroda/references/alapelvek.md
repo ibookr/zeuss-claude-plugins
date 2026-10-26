@@ -12,7 +12,7 @@
 - Bizonytalanság esetén alacsony konfidencia + jelölő (`ambiguous`, `needs_human`, `needs_data`), nem erőltetett döntés.
 
 ## Cégek
-- Mindig csak azokat a cégeket vizsgáljuk, amelyeket a `zeuss_list_companies` visszaad (a token hozzáférése); más cég adatát nem kérjük le és nem találgatjuk.
+- Mindig csak azokat a cégeket vizsgáljuk, amelyeket a `zeuss_list_companies` visszaad (a felhasználó Zeuss-hozzáférése); más cég adatát nem kérjük le és nem találgatjuk.
 
 ## Futások
 - Ahol létezik, a munkát `zeuss_start_run` / `zeuss_finish_run` közé tesszük, a végén darabszámokkal.
@@ -25,4 +25,4 @@
 - Ügyféltől dokumentumot (számla, bankszámlakivonat, végszámla) **soha nem e-mailben** kérünk: mindig a Zeuss Dokumentumok felületére, a megfelelő havi mappába kell feltöltenie (`zeuss_collection_status` → `upload_targets`).
 
 ## Ha egy eszköz nem érhető el
-Ha egy szükséges `zeuss_*` írási eszköz hiányzik a környezetből (pl. a token jogosultsága miatt), ne kerüld meg: végezd el az olvasó részt, a javaslatot add vissza szövegben, és jelezd, melyik eszköz hiányzott.
+Ha egy szükséges `zeuss_*` írási eszköz hiányzik a környezetből (pl. a felhasználó Zeuss-jogosultsága miatt), ne kerüld meg: végezd el az olvasó részt, a javaslatot add vissza szövegben, és jelezd, melyik eszköz hiányzott.

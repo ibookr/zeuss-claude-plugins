@@ -9,7 +9,7 @@ Akkor használd, ha a felhasználó azt kéri, hogy nézd meg, megjött-e minden
 Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_PLUGIN_ROOT}/skills/zeuss-iroda/references/alapelvek.md`.
 
 ## 0. Cégek és hónap
-- **Mindig azokat a cégeket vizsgáld, amelyekhez a tokennek hozzáférése van**: `zeuss_list_companies`. Ha a felhasználó egy céget nevez meg, csak azt; különben az összeset, cégenként külön (a cégek függetlenek, párhuzamosíthatók).
+- **Mindig azokat a cégeket vizsgáld, amelyekhez a felhasználónak hozzáférése van**: `zeuss_list_companies`. Ha a felhasználó egy céget nevez meg, csak azt; különben az összeset, cégenként külön (a cégek függetlenek, párhuzamosíthatók).
 - Hónap: amit a felhasználó mond; alapból az **előző naptári hónap** (`month` paraméter nélkül a Zeuss is ezt adja). Mondd ki, melyiket vetted.
 - Cégenként: `zeuss_start_run` (`task: document_collection`, `company_id`), a végén `zeuss_finish_run` darabszámokkal.
 - A cég saját adószáma és neve: `zeuss_company_overview` – a számlák irányának ellenőrzéséhez kell.
@@ -104,7 +104,7 @@ Ha a `previous_agent_emails` / `open_email_drafts` szerint 7 napon belül már k
   1. `zeuss_queue_email_draft` `confirm_code` nélkül → előnézet (feladó, címzett, másolat, tárgy, teljes szöveg);
   2. mutasd meg a felhasználónak szó szerint;
   3. csak a kifejezett „küldd el” / „mehet” válaszára hívd újra ugyanazzal a `draft_id`-vel és a `confirm_code`-dal.
-  Subagent soha nem küld. Ha az eszköz hiányzik (nincs `send` jog vagy `ZEUSS_ALLOW_COMMIT`), mondd meg, és add meg a tervezet linkjét.
+  Subagent soha nem küld. Ha az eszköz nem érhető el (a felhasználó Zeuss-jogosultsága nem engedi a küldést), mondd meg, és add meg a tervezet linkjét.
 
 ## 8. Összefoglaló
 Cégenként egy blokk:

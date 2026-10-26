@@ -44,18 +44,18 @@ Régebbi Claude Code-on: `/plugin marketplace add ibookr/zeuss-claude-plugins`, 
 - Minden szám a Zeussból jön; amit nem lát biztosan, azt az agent kihagyja.
 
 ## MCP kapcsolat
-A plugin a **`zeuss` nevű MCP szervert** használja, amely a Claude desktop alkalmazásban helyben fut (stdio). A plugin szándékosan **nem** hoz saját `.mcp.json`-t, mert az azonos nevű szerver ütközne a már beállítottal, és a tokenek felhasználónként külön vannak.
+A plugin a **`zeuss` nevű MCP szervert** használja, amely a Claude desktop alkalmazásban helyben fut (stdio). A plugin szándékosan **nem** hoz saját `.mcp.json`-t, mert az azonos nevű szerver ütközne a már beállítottal, és a hozzáférés felhasználónként külön van.
 
 Új kollégánál:
-1. Állítsd be a `zeuss` MCP szervert a Claude desktopban a saját, személyes agent-tokeneddel.
+1. Állítsd be a `zeuss` MCP szervert a Claude desktopban a Zeuss telepítési útmutatója szerint, a saját Zeuss-hozzáféréseddel.
 2. A szerver neve legyen pontosan `zeuss`, és az eszközök neve `zeuss_*` – a skillek és az agentek ezekre hivatkoznak.
-3. Az írási eszközök (`zeuss_start_run`, `zeuss_save_*`, `zeuss_audit_run`, `zeuss_audit_assess`, `zeuss_closing_save`, `zeuss_save_office_brief`, `zeuss_save_email_draft`, `zeuss_save_report`, `zeuss_save_document_extraction`, `zeuss_save_bank_statement_link`) a token jogosultságától függenek. A `zeuss_queue_email_draft` `send` jogú tokent és `ZEUSS_ALLOW_COMMIT=1`-et kér (MCP szerver ≥ 1.9.0, agent API ≥ 1.6.0). Ha valamelyik hiányzik, az agent a javaslatot szövegben adja vissza.
+3. Az írási eszközök (`zeuss_start_run`, `zeuss_save_*`, `zeuss_audit_run`, `zeuss_audit_assess`, `zeuss_closing_save`, `zeuss_save_office_brief`, `zeuss_save_email_draft`, `zeuss_save_report`, `zeuss_save_document_extraction`, `zeuss_save_bank_statement_link`) a felhasználó Zeuss-jogosultságától függenek. A `zeuss_queue_email_draft` (levélküldés) külön küldési jogosultságot kér, amelyet a Zeuss MCP szerver beállításánál lehet engedélyezni (MCP szerver ≥ 1.9.0). Ha valamelyik hiányzik, az agent a javaslatot szövegben adja vissza.
 
 ## Data handling (English)
 
 **What the plugin is.** Markdown skills and subagents only. It ships no MCP server, scripts, hooks or binaries, and it makes no network calls of its own.
 
-**Which service it talks to.** All data access goes through the user's own **Zeuss MCP server** (server name `zeuss`, tools `zeuss_*`). The user configures that server separately in Claude, with a personal Zeuss agent token. Zeuss is a Hungarian accounting-office system operated by IBOOKR; the token only grants access to the companies that user's account can see.
+**Which service it talks to.** All data access goes through the user's own **Zeuss MCP server** (server name `zeuss`, tools `zeuss_*`). The user installs and configures that server separately, following Zeuss's own setup guide; the plugin never reads, stores or passes any credential. Zeuss is a Hungarian accounting-office system operated by IBOOKR; the server only exposes the companies that user's Zeuss account can see.
 
 **What it reads** (from Zeuss, via `zeuss_*` tools): client companies, bank statement items, invoices and invoice images, ledger accounts, partners, open tasks and reports. This includes personal data of the accounting firm's clients and their business partners: names, e-mail addresses, postal addresses, tax numbers, bank transaction details.
 
