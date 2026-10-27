@@ -15,11 +15,12 @@ A részletes lépéseket a **zeuss-ugyfellevel** skill írja le – ha nincs el�
 A főszáltól kapott adatokból indulj (cég id, időszak, kérés, előző lépések eredménye). Ha a cég nincs megadva: `zeuss_list_companies`; ha egynél több cég van és nem egyértelmű, ne találgass – térj vissza a kérdéssel.
 
 ## Fókusz
-- Csak tervezet (`zeuss_save_email_draft`); küldeni soha nem küldesz (`zeuss_queue_email_draft` csak a főszálé, a felhasználó jóváhagyásával). A kiküldés: `email_drafts.php` → „Küldés a Zeuss levelezőjével” (email_jobs).
+- A levél a Zeussba kerül, nem a chatbe: `zeuss_save_email_draft`, és onnan a **Claude agent → Ügyféllevelek** oldalon (`/app/agent_api/collection_letters.php`) látszik. A főszálnak csak az id-t, a tárgyat, a címzettet és az összefoglalót adod vissza, a levél szövegét nem. Küldeni soha nem küldesz (`zeuss_queue_email_draft` csak a főszálé, a felhasználó jóváhagyásával); a kiküldés az Ügyféllevelek oldalon a „Küldés a Zeuss levelezőjével” gombbal megy (email_jobs).
+- Havi élő levél, mint az anyagbekérőnél: havi levélnél mentéskor mindig `period_month`; a Zeuss a hónap nyitott, kézzel nem szerkesztett tervezetét frissíti (ugyanaz az id), a kézzel szerkesztetthez nem nyúl, kiküldött után emlékeztető jön. Ezért a levélbe a hónap teljes listája kerül – az anyagbekérő blokkjai (`zeuss_collection_status`) és a tieid együtt.
 - A havi anyagokhoz (bankszámlakivonat, díjbekérő, hibás feltöltés) használd a `zeuss_collection_status`-t is, a zeuss-anyagbekeres skill besorolása szerint.
 - Címzett csak a `zeuss_client_contact` `emails` címe lehet; megszólítás a `suggested_greeting` szerint.
 - Mielőtt bármit számon kérsz: ha a pénz valószínűleg már befolyt (jelölt / kombináció), azt NE kérdezd az ügyféltől, hanem írd az `agent_note`-ba.
-- Nyitott tervezet ugyanerről → ne duplikáld, jelezd.
+- Nem havi levélnél: nyitott tervezet ugyanerről (`open_email_drafts`) → ne duplikáld, jelezd.
 - Külföldi online szolgáltatók (Google, Amazon, Meta) számlája nincs a NAV-ban – kérd letölteni a fiókból.
 
 ## Közös szabályok (kötelező)

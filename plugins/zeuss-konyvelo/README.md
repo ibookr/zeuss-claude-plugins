@@ -45,7 +45,7 @@ Régebbi Claude Code-on: `/plugin marketplace add ibookr/zeuss-claude-plugins`, 
 - Egyetlen kivétel az anyagbetöltő (`zeuss_load_bank_statement`, `zeuss_create_foreign_invoice`): jóváhagyás nélkül tölt be, bankonként azt, ami már megjött (az anyagbekérő által a bankszámlához rendelt kivonat), duplikálás nélkül, és csak ha a Zeuss beépített ellenőrzése hibátlan (kivonat nyitó + tételek = záró, főkönyvi nyitó / záró = kivonat, számlaadatok = számlakép). Külön „anyagbetöltés” (`load`) token-jog kell hozzá.
 - Az állapot a Zeuss Varázsló → **Havi irányítópult** oldalán cégenként látszik (Könyvelési anyagok, Anyagok betöltése).
 - `zeuss_accept_*` és `zeuss_queue_email_draft` (ügyféllevél → `email_jobs`) csak a főszálból, kétlépcsősen (előnézet → kifejezett „könyveld le” / „küldd el” → confirm_code).
-- A levéltervezetet a könyvelő a felületről is kiküldheti: `email_drafts.php` → „Küldés a Zeuss levelezőjével”.
+- A levéltervezetet a könyvelő a felületről is kiküldheti: **Claude agent → Ügyféllevelek** (`agent_api/collection_letters.php`, minden cég egy helyen) → „Küldés a Zeuss levelezőjével”. Az anyagbekérő és az ügyféllevél-író cégenként és hónaponként ugyanazt a havi élő levelet frissíti.
 - Minden szám a Zeussból jön; amit nem lát biztosan, azt az agent kihagyja.
 
 ## MCP kapcsolat
