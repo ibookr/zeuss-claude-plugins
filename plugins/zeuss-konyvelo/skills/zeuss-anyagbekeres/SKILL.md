@@ -67,13 +67,13 @@ Fájlonként (`invoice_files.unpaired`):
    - `ledger_missing` sor (banktétel főkönyvi bankszámla nélkül) vagy `not_flagged_as_bank` → könyvelőnek szóló jelzés, nem ügyfélnek.
    - A bank nevét és pénznemét a `bank_name_hint` / `currency_hint` / `currencies_in_items` adja; ha a név semleges (pl. „Elszámolási betétszámla HUF1”), a `company_bank_accounts` (a feltöltő varázsló bankjai) és a kivonatok tartalma alapján azonosítsd.
 2. **Feltöltött banki fájlok** (`bank_files`, `bank_like_files_elsewhere`), amelyeknek még nincs `agent_link`-je:
-   - fajta: `folder_kind` és kiterjesztés alapján – PDF a `Bankszamlakivonatok` mappában (vagy közvetlenül a `Bankok` alatt) ≈ `statement`; CSV/XLS(X) ≈ `transaction_list`; ami nem banki, az `not_bank_document`.
+   - fajta: `folder_kind` és kiterjesztés alapján – PDF a `Bankszamlakivonatok` mappában (vagy közvetlenül a `Bankok` alatt) ≈ `statement`; CSV / XLS / XLSX / XML ≈ `transaction_list` (a kivonat mellé ezt is rendeld a bankszámlához – az anyagbetöltő a tételeket abból is veheti); ami nem banki, az `not_bank_document`.
    - **számlatulajdonos**: a kivonaton szereplő név / adószám a cégé-e. Más cég kivonata → `not_our_statement` (tévesen feltöltött – az ügyfélnek jelezni, és ellenőrizni, nem került-e a mi kivonatunk a másik céghez).
    - főkönyvi szám: (a) `usual_bank_folder_ids` – ha a bankmappát korábban már hozzárendeltük, az a minta; (b) a mappa / `company_bank_accounts` banknév ↔ `bank_name_hint`; (c) pénznem az OCR-ben ↔ `currency_hint` / `currencies_in_items`; (d) bankszámlaszám az OCR-ben. Ha így sem egyértelmű (pl. két forintszámla ugyanannál a banknál): `zeuss_get_document` és a kivonat fejlécéből (számlaszám, pénznem, időszak) dönts.
    - időszak: nézd meg, hogy a kivonat a vizsgált hónapot fedi-e (`period_from` / `period_to`). Másik hónap kivonata → jelöld a `note`-ban, és ne számítsd a hónap kivonatának.
    - mentés: `zeuss_save_bank_statement_link` (`file_comment_id`, `kind` – `statement` / `transaction_list` / `not_our_statement` / `other` / `not_bank_document`, `ledger_number_id`, `period_from/to`, `account_number`, `currency`, `confidence`, `note`). Bizonytalan hozzárendelésnél `confidence < 0,5` és a `note`-ban, mi a kétség.
 3. Mentés után hívd újra a `zeuss_collection_status`-t: minden szükséges főkönyvi bankszámla `covered` vagy hiányzik.
-4. **Hiány:** amelyik szükséges főkönyvi bankszámlához nincs a hónapra `statement` → hiányzó kivonat (bank, pénznem, főkönyvi szám, időszak). A tranzakciós lista egymagában nem pótolja a PDF kivonatot.
+4. **Hiány:** amelyik szükséges főkönyvi bankszámlához nincs a hónapra `statement` → hiányzó kivonat (bank, pénznem, főkönyvi szám, időszak). A tranzakciós lista és a Számlázz.hu banki szinkron egymagában nem pótolja a PDF kivonatot – kivonat nélkül nincs banktétel-import.
 
 ## 5. Kell-e levél?
 Ügyfélnek szóló tétel: **kép nélküli számla (`invoices_without_file`)**; hiányzó bankszámlakivonat; más cég tévesen feltöltött kivonata; díjbekérő végszámla nélkül; hibás/olvashatatlan/hiányos/rossz helyre tett feltöltés; nem a céghez tartozó dokumentum; NAV-ban nem szereplő magyar számla (a kiállítónál tisztázandó).

@@ -1,6 +1,6 @@
 ---
 name: "zeuss-anyagbetoltes"
-description: "A beérkezett havi könyvelési anyag betöltése a Zeussba bankonként (ami megjött, az most, a többi a következő futáskor, duplikálás nélkül): bankszámlakivonatok tételei a megfelelő főkönyvi bankszámlára (PDF a Bank PDF átalakító parserével, vagy tranzakciós CSV), külföldi (NAV-ban nem szereplő) számlák rögzítése a számlaképből, majd ellenőrzés – kivonat nyitó / záró ↔ főkönyvi bankszámla nyitó / záró (Banknyilvántartás), külföldi számlák ↔ számlakép, MNB-árfolyam, közösségi adószám. Csak sikeres ellenőrzés után ír, jóváhagyást nem kér."
+description: "A beérkezett havi könyvelési anyag betöltése a Zeussba bankonként (ami megjött, az most, a többi a következő futáskor, duplikálás nélkül): bankszámlakivonatok tételei a megfelelő főkönyvi bankszámlára – a PDF kivonat mindig kell; a tételek a kivonat melletti tranzakciós adatforrásból (CSV / XLS / XLSX / XML fájl, Számlázz.hu banki szinkron) vagy a PDF-ből (Bank PDF átalakító), külföldi (NAV-ban nem szereplő) számlák rögzítése a számlaképből, majd ellenőrzés mindig a kivonat alapján – kivonat nyitó / záró ↔ főkönyvi bankszámla nyitó / záró (főkönyv), külföldi számlák ↔ számlakép, MNB-árfolyam, közösségi adószám. Csak sikeres ellenőrzés után ír, jóváhagyást nem kér."
 ---
 
 # Anyagbetöltés – kivonatok és külföldi számlák a könyvelésbe (Zeuss)
@@ -8,7 +8,9 @@ description: "A beérkezett havi könyvelési anyag betöltése a Zeussba bankon
 Akkor használd, ha a felhasználó azt kéri, hogy a beérkezett havi anyagot töltsd be: bankszámlakivonatok a főkönyvbe, külföldi számlák rögzítése, utána bankegyeztetés. A `zeuss-anyagbekeres` utáni lépés, de **nem vár a hónap zöld pipájára**: bankonként azt tölti be, ami már megjött. Egy kivonat akkor tölthető, ha az anyagbekérő az adott főkönyvi bankszámlához rendelte; külföldi számla akkor, ha az anyagbekérő már futott a hónapra – ezt a Zeuss is ellenőrzi. Ha 8 bankból 2 kivonata hiányzik, a 6-ot most betöltöd, a 2-t egy későbbi futás – a már betöltött 6-hoz nem nyúl (a Zeuss `already_loaded`-ként csak ellenőrzi, eltérő meglévő tételnél megáll).
 Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_PLUGIN_ROOT}/skills/zeuss-iroda/references/alapelvek.md` – ez a skill az ott leírt „nem könyvelünk” elv **kifejezett kivétele**: a felhasználó döntése szerint a betöltéshez nem kell jóváhagyás, a kapu a Zeuss beépített ellenőrzése.
 
-## Alapszabály: ellenőrzés nélkül semmi nem kerül be
+## Alapszabály: kivonat nélkül és ellenőrzés nélkül semmi nem kerül be
+- **Bankszámlakivonat (PDF) nélkül nincs banktétel-import.** Tranzakciós fájl (CSV / XLS / XLSX / XML) vagy a Számlázz.hu banki szinkron egymagában soha nem tölthető be – a Zeuss sem engedi (a `file_comment_id` mindig a PDF kivonat).
+- Ha a kivonat mellett van tranzakciós adatforrás, a tételeket abból is veheted (nem kell a PDF-ből kiolvasni), de **az ellenőrzés akkor is a kivonat alapján megy**: nyitó / záró egyenleg a PDF-ről, nyitó + tételek = záró, főkönyvi nyitó / záró = kivonat, és ha a parser a PDF tételeit is felismerte, az adatforrás tételszáma és összege egyezzen velük.
 - `zeuss_load_bank_statement` és `zeuss_create_foreign_invoice` **csak akkor ír, ha minden ellenőrzés `ok`**; különben semmi nem változik, és a `checks` listában ott a hiba oka.
 - Ha egy ellenőrzés nem megy át: **nem kerülöd meg**. Nem írsz át egyenleget, időszakot, összeget azért, hogy egyezzen a főkönyvvel; egy kivonatból nem töltesz be csak néhány tételt. Bemenetet csak akkor adsz meg vagy javítasz, ha az valóban hiányzott vagy a parser félreolvasta – és azt a kivonat / számla képén saját szemeddel ellenőrizted (`zeuss_get_document`).
 - A hibát tételesen leírod a könyvelőnek (mi nem egyezik, mennyivel, hol kell rendbe tenni). A Havi irányítópulton ez piros X. A még hiányzó anyag nem hiba: az sárga „részben” állapot.
@@ -22,27 +24,34 @@ Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_
 `zeuss_processing_status` (`company_id`, `month`):
 - `collection.checked = false` → **állj meg ennél a cégnél**: az anyagbekérő még nem futott (ő rendeli a kivonatokat a bankszámlákhoz). Javasold a `zeuss-anyagbekero` futtatását.
 - `can_load = false`, de az anyagbekérő futott → most nincs új betölthető anyag; a 2–3. lépés kimarad, de a 4. lépést (lezárás) akkor is futtasd, hogy az irányítópult friss legyen.
-- `bank_ledgers` – kivonatköteles főkönyvi bankszámlánként a hozzárendelt PDF kivonat(ok) (`statement_files`), tranzakciós listák (`transaction_list_files`), a korábbi betöltések (`loads`), a még betöltendő kivonatok (`pending_statement_file_ids`), a hónap le nem fedett napjai (`coverage_gaps`) és az állapot:
+- `bank_ledgers` – kivonatköteles főkönyvi bankszámlánként a hozzárendelt PDF kivonat(ok) (`statement_files`), tranzakciós adatfájlok (`transaction_list_files`: CSV / XLS / XLSX / XML), a Számlázz.hu banki szinkron tételei a hónapra (`szamlazzhu_sync`: számlaszám, tétel db, összeg, első / utolsó nap – a kivonat / korábbi betöltés számlaszáma alapján), a korábbi betöltések (`loads`, `transactions_source`-szal), a még betöltendő kivonatok (`pending_statement_file_ids`), a hónap le nem fedett napjai (`coverage_gaps`) és az állapot:
   - `ready` → a `pending_statement_file_ids` kivonatait töltsd be (2. lépés);
   - `done` → kész, **ne nyúlj hozzá**;
   - `partial` → a betöltött rész rendben, a hónap többi kivonata még nem jött meg – nincs teendő, a levél / következő futás dolga;
   - `waiting` → nincs hozzárendelt kivonat – nincs teendő;
   - `failed` → egy korábbi betöltés ellenőrzése elbukott; csak akkor próbáld újra, ha a hiba oka azóta megszűnhetett (pl. betöltöttük az előző időszakot), különben könyvelőnek szóló hiba.
+- `szamlazzhu_accounts` – a cég összes Számlázz.hu-n szinkronizált számlája a hónapra; amelyiknél `ledger_number_id = null`, azt még egyik kivonat számlaszáma sem kötötte bankszámlához (ha a kivonat számlaszáma más alakú, `szamlazzhu_account`-tal megadhatod).
 - `foreign_invoice_documents` – a külföldinek kiolvasott számlaképek (`todo` / `recorded` / `failed`); csak a `todo`-val foglalkozol.
 - `summary` – darabszámok (bankok és külföldi számlák állapot szerint).
 
 ## 2. Bankszámlakivonatok (csak a `ready` bankszámlák `pending_statement_file_ids` kivonatai; több kivonatnál időrendben)
-A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla elbukik, a többit ettől függetlenül betöltöd.
+A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla elbukik, a többit ettől függetlenül betöltöd. Tranzakciós fájlhoz vagy szinkronhoz, amelyhez nincs hozzárendelt PDF kivonat, nem nyúlsz (`waiting`).
 1. `zeuss_bank_file_preview` a PDF-re: felismerte-e a parser (`statements`: számlaszám, pénznem, tételszám, összeg), olvasható-e a nyitó / záró egyenleg (`balance_candidates`), mi az időszak.
+   **Tételforrás** – a kivonat egyenlege mindig a PDF-ről jön; a tételek ebben a sorrendben:
+   1. a bankszámlához rendelt **tranzakciós adatfájl** (`transaction_list_files`), amelyik a kivonat időszakát fedi: `source_file_comment_id`. Előtte `zeuss_bank_file_preview` a fájlra – CSV / XLS / XLSX: `csv_mapping` (a `suggested_mapping`, ha jó) + `csv_start_row`, Excelnél `sheet`, ha nem az első munkalap; XML (camt.053 / camt.052, Számlázz.hu banktranz): mapping nem kell, több számlánál az `account_number` választ;
+   2. a **Számlázz.hu banki szinkron** (`szamlazzhu_sync` van, és a tételszám / időszak illik a kivonathoz): `transactions_source: szamlazzhu` – a kivonat számlaszáma és időszaka szerint szűr (ha a PDF-ből nem derül ki a számlaszám, add meg `account_number`-ként a kivonatról);
+   3. ha egyik sincs: a **PDF** tételei (`transactions_source` nélkül).
+   Egy kivonathoz egy forrás – nem keversz. Ha egy forrás csak a saját ellenőrzésén bukik el (`source_rows`, `source_account`, `source_currency`, `source_matches_statement`), próbáld a következővel; ha a kivonaton bukik (`statement_consistent`, `ledger_opening`, `ledger_closing` stb.), forrást váltani nem segít – könyvelőnek szóló hiba.
 2. Bemenetek:
    - **Egyenleg**: ha a jelöltekből nem egyértelmű (üres, vagy több van és egyik pár sem egyezik a tételekkel), nyisd meg a kivonatot (`zeuss_get_document` a `document_id`-val), és add meg az `opening_balance` / `closing_balance`-t pontosan úgy, ahogy a kivonaton áll (előjel: tartozás / folyószámlahitel negatív).
    - **Több alszámla egy PDF-ben**: `account_number` – amelyik ehhez a főkönyvi bankszámlához tartozik (pénznem, számlaszám).
    - **Időszak**: ha a fejlécből nem derül ki és nem a teljes hónap, `period_from` / `period_to` a kivonatról.
-   - **A parser nem ismeri a PDF-et** (`parse_error`): ha van `transaction_list_files` CSV, `zeuss_bank_file_preview` a CSV-re → `csv_file_comment_id` + `csv_mapping` (a javasolt hozzárendelés, ha jó) + `csv_start_row`; az egyenleg ilyenkor is a PDF-ről jön. Más fájltípusra nincs megoldás: jelezd a könyvelőnek.
+   - **A parser nem ismeri a PDF-et** (`parse_error`): a tételek a fenti adatforrásból jönnek (fájl vagy Számlázz.hu szinkron); az egyenleget ilyenkor a kivonat képéről add meg (`zeuss_get_document` → `opening_balance` / `closing_balance`), és ha kell, az időszakot és a számlaszámot is. Ha nincs adatforrás, nincs betöltés: jelezd a könyvelőnek (tranzakciós fájlt kell feltölteni a kivonat mellé, vagy be kell kapcsolni a Számlázz.hu banki szinkront).
 3. `zeuss_bank_statement_check` – próba, semmi nem marad bent. Nézd végig a `checks`-et:
    - `statement_consistent` (nyitó + tételek = záró) hibája → hiányzó / félreolvasott tétel vagy rossz egyenleg: nézd meg a képet; ha a kép szerint a bemenet jó, ez könyvelőnek szóló hiba.
    - `ledger_opening` hibája → a főkönyvi bankszámla nyitója az időszak elején nem egyezik a kivonattal: hiányzik az előző hónap (vagy a nyitó tétel), vagy kézi tétel került be. Könyvelőnek szóló hiba, nem töltöd be.
    - `not_loaded_yet` hibája → az időszakban már van eltérő tétel a bankszámlán (részleges / kézi import) – könyvelőnek szóló hiba.
+   - `source_matches_statement` → az adatforrás tételei (db / összeg) eltérnek a PDF kivonat tételeitől: hiányos export, más időszak vagy más számla – próbáld a következő forrást; ha egyik sem egyezik, könyvelőnek szóló hiba.
    - `ledger_currency` / `account_consistent` / `collection_link` → valószínűleg rossz főkönyvi bankszámla; nézd meg a `zeuss_processing_status` többi bankszámláját, és ha a kivonat egyértelműen egy másikhoz tartozik, azzal próbáld; különben könyvelőnek szóló hiba.
 4. Ha a próba `status = would_load` (vagy `already_loaded`): `zeuss_load_bank_statement` **ugyanazokkal a paraméterekkel**. Devizás számlánál nézd meg az `fx.items_without_huf`-ot (hiányzó MNB-árfolyam → könyvelőnek).
 5. `status = failed` → nem töltesz be; a hibás ellenőrzések üzenete megy a könyvelőnek.
@@ -61,14 +70,14 @@ A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla
 6. A rögzítés után az `invoice_check` a rögzített számla ellenőrzése; `payment` hiánya csak figyelmeztetés (kártyás / gyűjtött terhelés), az a Bank párosítás lépés dolga.
 
 ## 4. Ellenőrzés és lezárás
-1. `zeuss_bank_reconciliation` (`month`) – bankszámlánként: `ok` = a kivonatok lefedik a hónapot, és nyitójuk / zárójuk = a főkönyvi bankszámla nyitója / zárója a Banknyilvántartás szerint; `partial` = a betöltött rész egyezik, de a hónapból még hiányzik kivonat (`coverage_gaps`); `no_statement` = még nincs kivonat; `mismatch` = eltérés (könyvelőnek).
+1. `zeuss_bank_reconciliation` (`month`) – bankszámlánként, mindig a kivonatok egyenlegeivel (a tételforrástól függetlenül): `ok` = a kivonatok lefedik a hónapot, és nyitójuk / zárójuk = a főkönyvi bankszámla nyitója / zárója (forintnál főkönyv, devizánál Banknyilvántartás); `partial` = a betöltött rész egyezik, de a hónapból még hiányzik kivonat (`coverage_gaps`); `no_statement` = még nincs kivonat; `mismatch` = eltérés (könyvelőnek).
 2. `zeuss_processing_finish` (`month`, rövid `note`) – **minden futás végén**, a hiányos hónapnál is. A Zeuss maga dönti el az eredményt a Varázsló → Havi irányítópult „Anyagok betöltése” oszlopába: `ok` → zöld pipa (minden bank kész, minden külföldi számla rögzítve); `partial` → sárga „6/8 bank” (ami megjött, rendben bent van, a többi anyagra vár – `waiting` lista); `waiting` → még semmi nem volt tölthető; `failed` → piros X a `problems` listával.
 3. `zeuss_finish_run`.
 
 ## 5. Összefoglaló
 Cégenként:
 - **Cég / hónap** – `ok` / `partial` / `waiting` / `failed`, a `counts` szerint (pl. bank 6/8, külföldi 3/4)
-- **Bank**: főkönyvi bankszámlánként egy sor – kivonat (fájlnév), tétel db, nyitó → záró, most betöltve / korábban már kész / anyagra vár (melyik időszak) / nem sikerült (miért)
+- **Bank**: főkönyvi bankszámlánként egy sor – kivonat (fájlnév), tételforrás (PDF / tranzakciós fájl neve / Számlázz.hu szinkron), tétel db, nyitó → záró, most betöltve / korábban már kész / anyagra vár (melyik időszak) / nem sikerült (miért)
 - **Külföldi számlák**: rögzítve (számlaszám, partner, bruttó, pénznem, árfolyam) / kihagyva (miért)
 - **Egyeztetés**: bankszámlánként ok / eltérés összeggel
 - **Könyvelőnek**: legfeljebb 5 teendő, hol a Zeussban (Banktételek, Banknyilvántartás, Dokumentumok)
