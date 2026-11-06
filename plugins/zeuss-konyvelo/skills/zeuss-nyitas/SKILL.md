@@ -21,7 +21,7 @@ Akkor használd, ha a felhasználó egy vagy több cégnél a nyitást kéri. Es
 - Cégenként `zeuss_start_run` (`task: opening_import`), a végén `zeuss_finish_run` darabszámokkal; a `run_id`-t add át a check / import hívásnak.
 
 ## 1. Helyzetkép – `zeuss_opening_status`
-- `files` – a Nyitas mappa fájljai (`file_comment_id`). Ha üres: jelezd, hogy a fájlokat a cég Dokumentumkezelőjében a **Nyitas** mappába kell feltölteni (vagy add meg őket, és `zeuss_opening_upload_file`-lal feltöltöd).
+- `files` – a Nyitas mappa fájljai (`file_comment_id`), a könyvelő vegyesen, válogatás nélkül tölti fel őket: **Nyitás → MI nyitás – fájlok feltöltése**. Hogy melyik mi (vevő, szállító, nyitó napló, kiegészítő fájl), azt neked kell eldöntened a 2. lépésben. Ha üres: jelezd, hogy a fájlokat ott kell feltölteni (vagy ha a felhasználó megadja őket, `zeuss_opening_upload_file`-lal feltöltöd).
 - `existing_opening_journal` – ha a nyitás évére már van nyitó tétel, a Zeuss csak akkor engedi tovább, ha főkönyvi számonként egyezik a fájllal (`already_loaded`); eltérőnél megáll (nem duplikál).
 - `formats` – a választható importformátumok (`vevo_szallito` / `nyito_naplo`), több fájlos formátumnál a fájlmezőkkel (`files.key`).
 
