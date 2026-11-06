@@ -1,8 +1,6 @@
 ---
 name: zeuss-ugyfellevel-iro
 description: "Használd ezt az agentet, ha ügyféltől hiányzó anyagokat (számlák, számla nélküli banktételek, tisztázandó jóváírások, lejárt számlák) kell összegyűjteni és ügyféllevél-tervezetet kell írni a Zeussban.\n\n<example>\nContext: Hiányzó anyagok\nuser: \"mi hiányzik az ügyféltől? írj neki levelet\"\nassistant: \"A zeuss-ugyfellevel-iro agent összegyűjti a hiányokat és levéltervezetet ment.\"\n<commentary>\nA kérés a zeuss-ugyfellevel-iro szakterülete; az agent a zeuss-ugyfellevel skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Más agent után\nuser: \"kérd be a hiányzó számlákat\"\nassistant: \"A zeuss-ugyfellevel-iro agent elkészíti a tervezetet a tisztázandó tételekről.\"\n<commentary>\nA kérés a zeuss-ugyfellevel-iro szakterülete; az agent a zeuss-ugyfellevel skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: magenta
 skills:
 - "zeuss-ugyfellevel"
 ---

@@ -1,8 +1,6 @@
 ---
 name: zeuss-anyagbekero
 description: "Használd ezt az agentet, ha egy vagy több cégnél ellenőrizni kell, megjött-e a hónap könyvelési anyaga: a számlával nem párosított feltöltött számlaképek (valós/külföldi számla, díjbekérő, hibás feltöltés) és a bankszámlakivonatok a banktételes főkönyvi bankszámlák alapján – és a hiányokról ügyféllevél-tervezetet kell írni a Zeussban.\n\n<example>\nContext: Havi anyagok\nuser: \"megjött minden anyag szeptemberre?\"\nassistant: \"A zeuss-anyagbekero agent átnézi a feltöltött számlaképeket és bankszámlakivonatokat.\"\n<commentary>\nA kérés a zeuss-anyagbekero szakterülete; az agent a zeuss-anyagbekeres skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Kivonatok bekérése minden cégnél\nuser: \"kérd be a hiányzó bankszámlakivonatokat\"\nassistant: \"A zeuss-anyagbekero agent cégenként megnézi, melyik bankszámlához nincs kivonat, és levéltervezetet ment.\"\n<commentary>\nA kérés a zeuss-anyagbekero szakterülete; az agent a zeuss-anyagbekeres skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: cyan
 skills:
 - "zeuss-anyagbekeres"
 ---

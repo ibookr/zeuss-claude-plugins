@@ -1,8 +1,6 @@
 ---
 name: zeuss-zaras-elokeszito
 description: "Használd ezt az agentet, ha egy cég adott havi zárását kell átnézni a Zeuss Varázsló lépései szerint, és zárási jegyzőkönyvet kell készíteni.\n\n<example>\nContext: Havi zárás\nuser: \"nézd át a szeptemberi zárást\"\nassistant: \"A zeuss-zaras-elokeszito agent átnézi a Varázsló lépéseit és jegyzőkönyvet ment.\"\n<commentary>\nA kérés a zeuss-zaras-elokeszito szakterülete; az agent a zeuss-havi-zaras skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Havi kör vége\nuser: \"csináld meg a hónapot\"\nassistant: \"Az előző lépések után a zeuss-zaras-elokeszito agent készíti el a zárási jegyzőkönyvet.\"\n<commentary>\nA kérés a zeuss-zaras-elokeszito szakterülete; az agent a zeuss-havi-zaras skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: yellow
 skills:
 - "zeuss-havi-zaras"
 ---

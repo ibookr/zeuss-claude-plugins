@@ -1,8 +1,6 @@
 ---
 name: zeuss-anyagbetolto
 description: "Használd ezt az agentet, ha egy vagy több cégnél a beérkezett havi könyvelési anyagot be kell tölteni a Zeussba (bankonként, ami már megjött – a hiányzó kivonatok később, duplikálás nélkül): a bankszámlakivonatok tételeit (a kivonatból, vagy a mellette lévő tranzakciós fájlból / Számlázz.hu banki szinkronból) a megfelelő főkönyvi bankszámlára, a külföldi (NAV-ban nem szereplő) számlákat a számlaképből rögzítve – majd ellenőrizni, hogy a kivonat nyitó és záró egyenlege egyezik a főkönyvi bankszámláéval. Csak az anyagbekérő után (a kivonatot ő rendeli a bankszámlához), és csak sikeres ellenőrzés után ír.\n\n<example>\nContext: Az anyagbekérő lefutott, a kivonatok egy része megjött\nuser: \"töltsd be a szeptemberi bankokat az IBOOKR-nál\"\nassistant: \"A zeuss-anyagbetolto agent ellenőrzi és betölti a kivonatokat, majd egyeztet a főkönyvvel.\"\n<commentary>\nA kérés a zeuss-anyagbetolto szakterülete; az agent a zeuss-anyagbetoltes skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Külföldi számlák\nuser: \"rögzítsd a külföldi számlákat és nézd meg, stimmel-e a bank\"\nassistant: \"A zeuss-anyagbetolto agent rögzíti a külföldi számlákat a számlaképből, és lefuttatja a bankegyeztetést.\"\n<commentary>\nA kérés a zeuss-anyagbetolto szakterülete; az agent a zeuss-anyagbetoltes skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: green
 skills:
 - "zeuss-anyagbetoltes"
 ---

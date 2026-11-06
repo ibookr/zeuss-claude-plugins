@@ -1,8 +1,6 @@
 ---
 name: zeuss-bankparosito
 description: "Használd ezt az agentet, ha nyitott banktételek számlához párosítását vagy számla nélküli banktételek könyvelési javaslatát kell elkészíteni a Zeussban.\n\n<example>\nContext: A felhasználó a nyitott banktételeket akarja rendezni\nuser: \"párosítsd a nyitott banktételeket az IBOOKR-nál\"\nassistant: \"A bankpárosításhoz elindítom a zeuss-bankparosito agentet.\"\n<commentary>\nA kérés a zeuss-bankparosito szakterülete; az agent a zeuss-bankparositas skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Teljes havi kör része\nuser: \"csináld meg a szeptembert\"\nassistant: \"A havi kör 2. lépéseként a zeuss-bankparosito agent párosítja a banktételeket.\"\n<commentary>\nA kérés a zeuss-bankparosito szakterülete; az agent a zeuss-bankparositas skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: cyan
 skills:
 - "zeuss-bankparositas"
 ---

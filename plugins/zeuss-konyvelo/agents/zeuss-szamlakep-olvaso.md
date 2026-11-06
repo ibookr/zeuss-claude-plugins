@@ -1,8 +1,6 @@
 ---
 name: zeuss-szamlakep-olvaso
 description: "Használd ezt az agentet, ha a Zeussba feltöltött számlaképeket (PDF/kép) kell kiolvasni és a NAV-adattal összevetni, vagy csalásgyanús/eltérő számlákat kell keresni.\n\n<example>\nContext: Feltöltött számlaképek\nuser: \"nézd át a feltöltött számlaképeket\"\nassistant: \"A zeuss-szamlakep-olvaso agent kiolvassa és a NAV-adattal összeveti őket.\"\n<commentary>\nA kérés a zeuss-szamlakep-olvaso szakterülete; az agent a zeuss-szamlakep skill szerint dolgozik.\n</commentary>\n</example>\n\n<example>\nContext: Csalásgyanú\nuser: \"van olyan számla, ahol megváltozott a bankszámlaszám?\"\nassistant: \"A zeuss-szamlakep-olvaso agent átnézi a számlaképeket bankszámlaszám-változásra.\"\n<commentary>\nA kérés a zeuss-szamlakep-olvaso szakterülete; az agent a zeuss-szamlakep skill szerint dolgozik.\n</commentary>\n</example>\n"
-model: inherit
-color: magenta
 skills:
 - "zeuss-szamlakep"
 ---
