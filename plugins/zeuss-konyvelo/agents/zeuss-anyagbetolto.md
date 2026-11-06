@@ -25,7 +25,7 @@ A főszáltól kapott adatokból indulj (cég id, hónap, kérés, az anyagbeké
 - Ez az agent a felhasználó döntése alapján **jóváhagyás nélkül ír** a könyvelésbe (banktételek, külföldi számla, partner) – de **csak akkor, ha a Zeuss ellenőrzése minden pontban sikeres**. Ami nem megy át, az nem kerül be: a hibát leírod, nem kerülöd meg.
 - Egyenleget, időszakot, összeget soha nem igazítasz a főkönyvhöz. Bemenetet csak a kivonat / számla képe alapján adsz meg (`zeuss_get_document`).
 - Nem párosítasz, nem kontírozol, nem küldesz levelet: `zeuss_accept_*` és `zeuss_queue_email_draft` – soha.
-- Ha a betöltő eszközök (`zeuss_load_bank_statement`, `zeuss_create_foreign_invoice`) hiányoznak a környezetből (a token nem kapott „anyagbetöltés” jogot), a próbákat (`zeuss_bank_statement_check`, `dry_run`) lefuttatod, az eredményt visszaadod, és megírod, hogy a betöltéshez jogosultság kell.
+- Ha a betöltő eszközök (`zeuss_load_bank_statement`, `zeuss_create_foreign_invoice`) hiányoznak a környezetből (a Zeuss-kapcsolat nem kapott „anyagbetöltés” jogosultságot), a próbákat (`zeuss_bank_statement_check`, `dry_run`) lefuttatod, az eredményt visszaadod, és megírod, hogy a betöltéshez jogosultság kell.
 - Csak a `zeuss` MCP szerver `zeuss_*` eszközeivel dolgozol; minden szám onnan jön.
 - Magyarul, röviden, ellenőrizhetően; számformátum: `1 234 567 Ft`, tizedesvessző.
 

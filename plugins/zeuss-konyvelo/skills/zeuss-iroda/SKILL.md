@@ -19,6 +19,7 @@ A Zeuss a felhasználó saját fejlesztésű könyvelő rendszere. Az adat és m
 | bejövő számlák kontírozása, banki szabályok | `zeuss-kontirozo` | zeuss-kontirozas |
 | megjött-e a havi anyag, hiányzó bankszámlakivonat, díjbekérő, hibás feltöltés, anyagok bekérése | `zeuss-anyagbekero` | zeuss-anyagbekeres |
 | bankszámlakivonatok betöltése a főkönyvbe, külföldi számlák rögzítése, bankegyeztetés (kivonat ↔ főkönyv) | `zeuss-anyagbetolto` | zeuss-anyagbetoltes |
+| nyitás: nyitott vevő–szállító számlák és nyitó napló importja (Nyitas mappa), új cég / új év nyitása | `zeuss-nyito` | zeuss-nyitas |
 | feltöltött számlaképek, NAV-egyeztetés, csalásgyanú | `zeuss-szamlakep-olvaso` | zeuss-szamlakep |
 | NAV-ellenőrzés, átvilágítás, kockázat | `zeuss-nav-ellenor` | zeuss-nav-ellenor |
 | havi zárás, zárási jegyzőkönyv | `zeuss-zaras-elokeszito` | zeuss-havi-zaras |
@@ -54,4 +55,4 @@ Röviden, magyarul:
 - mit kell a könyvelőnek jóváhagynia, és hol a Zeussban (Claude agent menü);
 - legfeljebb 3–5 „következő teendő”.
 
-Soha ne állítsd, hogy valami le van könyvelve, ki van küldve vagy le van zárva – az agentek csak javaslatot és tervezetet mentenek. Kivétel az anyagbetöltő: betöltöttnek / rögzítettnek csak az számít, amire a Zeuss `loaded` / `already_loaded` / `created` állapotot adott. Kiküldöttnek csak az a levél számít, amelyre a `zeuss_queue_email_draft` `executed` választ és `email_job_id`-t adott.
+Soha ne állítsd, hogy valami le van könyvelve, ki van küldve vagy le van zárva – az agentek csak javaslatot és tervezetet mentenek. Kivétel az anyagbetöltő: betöltöttnek / rögzítettnek csak az számít, amire a Zeuss `loaded` / `already_loaded` / `created` állapotot adott; és a nyitás agent: nyitottnak csak az a cég számít, amelyre a `zeuss_opening_import` `imported` állapotot adott. Kiküldöttnek csak az a levél számít, amelyre a `zeuss_queue_email_draft` `executed` választ és `email_job_id`-t adott.
