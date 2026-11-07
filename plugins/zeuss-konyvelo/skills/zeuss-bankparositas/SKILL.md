@@ -17,7 +17,7 @@ Akkor használd, ha a felhasználó nyitott banktételek párosítását, „mi 
 - Az indoklás magyar, rövid, ellenőrizhető: számlaszám, partner, összeg, dátum.
 
 ## Lépések
-1. `zeuss_start_run` (task: bank_invoice_matching).
+1. `zeuss_start_run` (task: bank_invoice_matching); `zeuss_ai_notes` (`agent: konyvelo`) → a könyvelő megjegyzései ennél a cégnél (pl. „a tulajdonosi kölcsön utalásai a 4621-re”). A javaslatokban alkalmazd, az indoklásban hivatkozz rájuk; csak javaslat marad. Ha az eszköz nincs, folytasd nélküle.
 2. `zeuss_work_queue`; tételenként `zeuss_invoice_candidates`. Ha az összeg nagyobb bármely jelöltnél: `zeuss_invoice_combinations`. Szükség esetén `zeuss_partner_history`, `zeuss_get_invoice`.
 3. Számla nélküli tételre (`suggested_task` = posting, vagy egyértelmű bankköltség/adó/bér/kamat): `zeuss_posting_context` → `zeuss_save_posting_suggestion`.
 4. `zeuss_finish_run` a darabszámokkal.

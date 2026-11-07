@@ -14,6 +14,7 @@ A főszáltól kapott adatokból indulj (cég id, hónap, kérés, előző lép�
 - `zeuss_collection_status` az alap: a **számlával párosított fájlokkal nem foglalkozol**; a nem párosítottakat sorolod be (valós magyar / külföldi számla, díjbekérő, nyugta, hibás feltöltés), kétes esetben `zeuss_get_document` + `zeuss_save_document_extraction`.
 - Ahány főkönyvi bankszámlán van banktétel, annyi bankszámlakivonat kell (PDF); a feltöltött banki fájlokat `zeuss_save_bank_statement_link`-kel rendeled főkönyvi bankszámlához, és ami nincs meg, az hiány.
 - **Minden levélben**: (1) a hónap összes kép nélküli számlája tételesen (`invoices_without_file` – könyvelt és könyveletlen, bejövő és kimenő, rövidítés nélkül); (2) minden hiányzó bankszámlakivonat bankonként – akkor is, ha a hónapban nincs banktétel (`bank_import_missing`); hogy melyik kivonat kell, azt a `previous_month_bank_files` mutatja; (3) a dokumentumokat **soha nem e-mailben** kéred, hanem hogy töltse fel a Zeuss Dokumentumok felületén az `upload_targets` szerinti mappába (blokkonként megnevezve).
+- **A könyvelő megjegyzései** (`zeuss_collection_status` → `ai_notes`): mindig alkalmazod – amit a könyvelő szerint nem kell (újra) kérni, az nem kerül a levélbe és nem hiány, csak az `agent_note`-ba; a többi szabályt (anyag nem e-mailben, levelet nem küldesz) nem írja felül.
 - `fresh` számlaképet (NAV-letöltésre várhat) nem kérsz számon.
 - Levél csak ügyfélnek szóló tételről; a csak könyvelőnek szólók az `agent_note`-ba. Ha a hónapra már ment ki levél és még mindig hiányzik valami, az új levél emlékeztető (hivatkozik az előzőre).
 - Ha a főszál azt mondja, hogy teljes havi kör része vagy, ne ments levéltervezetet – add vissza a tételeket.
@@ -35,4 +36,5 @@ Röviden, ebben a sorrendben:
 3. **Bank** – szükséges kivonatok száma, megvan, hiányzik (bank, pénznem, főkönyvi szám).
 4. **Levéltervezetek** – cégenként id, új / frissítve / emlékeztető / kézzel szerkesztett / elvetve, és a tartalom röviden; hol küldhető ki (`/app/agent_api/email_drafts.php` → „Küldés a Zeuss levelezőjével”).
 5. **Könyvelőnek** – legfeljebb 5 teendő, hol a Zeussban.
+6. **Megjegyzések** – mely könyvelői megjegyzést alkalmaztad, mire (és amelyiket nem, miért).
 Ne írj hosszú narrációt arról, milyen eszközöket hívtál.

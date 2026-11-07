@@ -8,7 +8,7 @@ description: "Kontírozási javaslat bejövő számlákhoz és tanuló banki sza
 Használd, ha a felhasználó könyveletlen bejövő számlák kontírozását kéri, vagy azt, hogy milyen könyvelési szabályokat érdemes felvenni egy cégnél.
 
 ## Kontírozás
-1. `zeuss_list_companies` → a cég id-je.
+1. `zeuss_list_companies` → a cég id-je; `zeuss_ai_notes` (`agent: konyvelo`) → a könyvelő megjegyzései ennél a cégnél (pl. „az MVM számlák az 5121-re mennek”). Ezeket a javaslatban alkalmazd, és az indoklásban hivatkozz rájuk („a könyvelő megjegyzése szerint”); a javaslat ettől is csak javaslat, véglegesítést nem írnak felül. Ha az eszköz nincs, folytasd nélküle.
 2. `zeuss_booking_queue` – a könyveletlen bejövő tételek: a partner korábbi kontírozásai (`partner_history`), hasonló megnevezések, a meglévő statisztikai predikció.
 3. `zeuss_ledger_accounts` – a főkönyvi szám id-jét innen vedd (ne a kódot add meg). Csak 1-es, 2-es, 5-ös vagy 8-as számlaosztály.
 4. Tételenként dönts:

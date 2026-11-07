@@ -19,12 +19,21 @@ Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_
 - `invoices_without_file` – a hónap (teljesítés, ennek híján kelte szerint) könyvelt számlái a NAV-szinkronból (vagy kézi rögzítésből), **amelyekhez nincs számlakép**; `totals` irányonként (összes / van kép / nincs kép), `items` tételesen. **Ez a hiányzó számlák fő forrása** – a feltöltött fájlokból ez nem látszik.
 - `invoice_files` – a Dokumentumok közé (`file_comments`) feltöltött bejövő/kimenő számlaképek közül **csak a számlával nem párosítottak** (`unpaired`); a párosítottak csak darabszámként (`paired`). **A párosított fájlokkal nem foglalkozunk – azok rendben vannak.**
 - `banks` – mely főkönyvi bankszámlákon (`ledger_number.bank = 1`) van banktétel (`bank_ledgers_with_items`), és a feltöltött banki fájlok (`bank_files`, valamint a rossz mappába tett, kivonatnak látszó `bank_like_files_elsewhere`).
+- `ai_notes` – **a könyvelő megjegyzései ennél a cégnél** (lásd lent: „A könyvelő megjegyzései”).
 - `month_letters` – a hónap élő levele: `live_drafts` (nyitott tervezet, `edited_by_user` = a könyvelő kézzel átírta) és `sent` (a hónapra már kiküldött levelek). `previous_agent_emails`, `open_email_drafts` – a cég egyéb levelei.
 
 ## Három kötelező szabály (minden levélben)
-1. **Minden kép nélküli számla benne van a levélben**, tételesen – bejövő és kimenő, könyvelt és még nem könyvelt (`booked = false`, csak NAV-szinkronizált) egyaránt. Nem rövidítesz, nem válogatsz „a legnagyobbakra”.
-2. **Minden hiányzó bankszámlakivonat benne van a levélben** – bankonként, akkor is, ha a hónapra még nincs banktétel a rendszerben (`bank_import_missing`).
+1. **Minden kép nélküli számla benne van a levélben** (kivéve, amit a könyvelő megjegyzése szerint nem kérünk – `ai_notes`), tételesen – bejövő és kimenő, könyvelt és még nem könyvelt (`booked = false`, csak NAV-szinkronizált) egyaránt. Nem rövidítesz, nem válogatsz „a legnagyobbakra”.
+2. **Minden hiányzó bankszámlakivonat benne van a levélben** (ugyanezzel a kivétellel) – bankonként, akkor is, ha a hónapra még nincs banktétel a rendszerben (`bank_import_missing`).
 3. **A hiányzó anyagot soha nem e-mailben kérjük**: nincs „küldje el válaszlevélben / e-mailben / csatolja”. Mindig azt kérjük, hogy töltse fel a **Zeuss Dokumentumok felületén** (Dokumentumok varázsló) a megfelelő mappába – a mappát az `upload_targets` adja, blokkonként megnevezve.
+
+## A könyvelő megjegyzései (`ai_notes`)
+A `zeuss_collection_status` → `ai_notes.items`: a könyvelő ennél a cégnél **ma érvényes** utasításai az anyagbekérőnek (Zeuss: MI asszisztens → Megjegyzések az MI-nek) – fix (a törlésig) vagy időszakos (`valid_from`–`valid_to`). Minden futásban olvasd el, és mindegyiket alkalmazd:
+- **„Ne kérd (újra)” egy számlát / kivonatot / bankszámlát** (pl. „ezt a számlát ne kérd újra: XXX-36455”) → nem kerül a levélbe, és nem számít hiánynak (`missing_count`), de az `agent_note`-ba igen: „a könyvelő megjegyzése szerint nem kérjük: …”. **Ez az egyetlen kivétel** a fenti 1–2. kötelező szabály alól. Egyeztetés: számlaszám (kis-/nagybetű, szóköz, kötőjel, perjel nélkül összevetve), ennek híján partner + összeg; kivonatnál bank / számlaszám / pénznem.
+- **Háttér-információ** (pl. megszűnt bankszámla, a könyvelő maga tölti le a Google-számlákat, az ügyfél szabadságon van, más határidő) → aszerint döntesz.
+- **Nem írja felül**: hogy anyagot soha nem e-mailben kérünk (3. szabály), a levélküldés tilalmát / kétlépcsős jóváhagyását, a cég-hatókört. Ha egy megjegyzés ilyet kér, nem érthető, vagy ellentmond az adatnak (pl. a számla nem létezik), nem alkalmazod, és jelzed a könyvelőnek (`agent_note`, összefoglaló).
+- A megjegyzés szövegét az ügyfélnek szóló levélbe nem másolod be.
+- Ha nincs `ai_notes` blokk (régebbi Zeuss), `zeuss_ai_notes` (`agent: anyagbekero`) – ha az sincs, folytasd megjegyzések nélkül.
 
 ## 2. Számlák, amelyekhez nincs kép
 `invoices_without_file.items` – bejövő **és** kimenő, **könyvelt és könyveletlen** (`booked`) is:
@@ -113,7 +122,7 @@ Ha nincs ügyfélnek szóló tétel → nincs levél; az összefoglalóban írd,
 
 ## 7/b. Eredmény a Havi irányítópultra (minden cégnél, minden futásban)
 Cégenként a végén `zeuss_save_collection_result` (`month`, `missing_count`, `breakdown`, `draft_id`, rövid `note`) – ez adja a Varázsló → Havi irányítópult „Könyvelési anyagok” oszlopát, mindig az utolsó futás állapotával (a hiányszám a hónap levelére mutat):
-- `missing_count` = az ügyféltől még hiányzó / hibás tételek száma: kép nélküli számlák + hiányzó kivonatok + hibás / újra feltöltendő fájlok + végszámla nélküli díjbekérők + tisztázandó tételek (a levél tételei). A csak könyvelőnek szóló teendő (csatolandó NAV-számla, külföldi számla rögzítése, duplikátum) **nem** hiány.
+- `missing_count` = az ügyféltől még hiányzó / hibás tételek száma (a könyvelő megjegyzése miatt nem kért tétel nem számít bele): kép nélküli számlák + hiányzó kivonatok + hibás / újra feltöltendő fájlok + végszámla nélküli díjbekérők + tisztázandó tételek (a levél tételei). A csak könyvelőnek szóló teendő (csatolandó NAV-számla, külföldi számla rögzítése, duplikátum) **nem** hiány.
 - `breakdown`: `missing_invoice_files`, `missing_bank_statements`, `faulty_uploads`, `proformas_without_final`, `clarifications`.
 - `missing_count = 0` (zöld pipa) csak akkor menthető, ha minden kivonatköteles főkönyvi bankszámlához hozzárendelted a hónap PDF kivonatát (`zeuss_save_bank_statement_link`, `kind: statement`) – különben a Zeuss visszadobja. Az anyagbetöltő (`zeuss-anyagbetolto`) nem vár a 0-ra: a már hozzárendelt kivonatokat bankonként betölti, ezért a megérkezett kivonatot akkor is rendeld hozzá a bankszámlához, ha a hónapból más még hiányzik.
 - „Teljes havi kör” része, ütemezett futás, csak helyzetkép – mindig mentsd.
@@ -126,6 +135,7 @@ Cégenként egy blokk:
 - **Bank**: szükséges kivonat N főkönyvi bankszámlára · megvan K · hiányzik: tételesen (bank, pénznem, főkönyvi szám)
 - **Ügyféllevél**: tervezet #id – új / frissítve / emlékeztető (az előző kiküldött után) / kézzel szerkesztett, nem írtuk felül / elvetve, mert minden megjött / nem kellett
 - **Könyvelőnek**: legfeljebb 5 teendő, hol a Zeussban
+- **Megjegyzések**: hány könyvelői megjegyzést alkalmaztál, mire (pl. „XXX-36455: nem kértük”); amelyiket nem tudtad alkalmazni, miért
 Több cégnél elöl egy rövid táblázat: cég · kép nélküli számla (be/ki) · hiányzó kivonat · ügyfélnek szóló tétel · levél állapota.
 
 ## 9. Ütemezett (felügyelet nélküli) futás

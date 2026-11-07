@@ -33,6 +33,15 @@ Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_
 - `szamlazzhu_accounts` – a cég összes Számlázz.hu-n szinkronizált számlája a hónapra; amelyiknél `ledger_number_id = null`, azt még egyik kivonat számlaszáma sem kötötte bankszámlához (ha a kivonat számlaszáma más alakú, `szamlazzhu_account`-tal megadhatod).
 - `foreign_invoice_documents` – a külföldinek kiolvasott számlaképek (`todo` / `recorded` / `failed`); csak a `todo`-val foglalkozol.
 - `summary` – darabszámok (bankok és külföldi számlák állapot szerint).
+- `ai_notes` – **a könyvelő megjegyzései ennél a cégnél** (lásd lent: „A könyvelő megjegyzései”).
+
+## A könyvelő megjegyzései (`ai_notes`)
+A `zeuss_processing_status` → `ai_notes.items`: a könyvelő ennél a cégnél **ma érvényes** utasításai az adatbetöltőnek (Zeuss: MI asszisztens → Megjegyzések az MI-nek) – fix (a törlésig) vagy időszakos (`valid_from`–`valid_to`). Minden futásban olvasd el, és mindegyiket alkalmazd a 2–3. lépésben:
+- **Tételforrás / bemenet** (pl. „a K&H kivonat tételeit mindig a CSV-ből töltsd”, „a Wise kivonat számlaszáma: …”) → azt használod; ha azzal az ellenőrzés elbukik, nem váltasz csendben forrást, hanem jelzed.
+- **Kihagyás** (pl. „a Revolut kivonatot a könyvelő tölti be kézzel”, „ezt a külföldi számlát ne rögzítsd”) → nem töltöd be, és a `zeuss_processing_finish` `note`-jába és az összefoglalóba írod: „a könyvelő megjegyzése szerint kihagyva: …”.
+- **Partner / ÁFA-kód / egyéb rögzítési tudnivaló** külföldi számlához → aszerint töltöd ki (a dry run ellenőrzése ugyanúgy kell).
+- **Nem írja felül** az alapszabályt: kivonat és hibátlan ellenőrzés nélkül semmi nem kerül be; egyenleget, időszakot, összeget a megjegyzés kedvéért sem igazítasz; részleges betöltés nincs; `zeuss_accept_*` / `zeuss_queue_email_draft` soha. Ha egy megjegyzés ilyet kér, nem érthető, vagy ellentmond a kivonatnak, nem alkalmazod, és jelzed a könyvelőnek.
+- Ha nincs `ai_notes` blokk (régebbi Zeuss), `zeuss_ai_notes` (`agent: anyagbetolto`) – ha az sincs, folytasd megjegyzések nélkül.
 
 ## 2. Bankszámlakivonatok (csak a `ready` bankszámlák `pending_statement_file_ids` kivonatai; több kivonatnál időrendben)
 A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla elbukik, a többit ettől függetlenül betöltöd. Tranzakciós fájlhoz vagy szinkronhoz, amelyhez nincs hozzárendelt PDF kivonat, nem nyúlsz (`waiting`).
@@ -81,6 +90,7 @@ Cégenként:
 - **Külföldi számlák**: rögzítve (számlaszám, partner, bruttó, pénznem, árfolyam) / kihagyva (miért)
 - **Egyeztetés**: bankszámlánként ok / eltérés összeggel
 - **Könyvelőnek**: legfeljebb 5 teendő, hol a Zeussban (Banktételek, Banknyilvántartás, Dokumentumok)
+- **Megjegyzések**: hány könyvelői megjegyzést alkalmaztál, mire; amelyiket nem tudtad alkalmazni, miért
 Több cégnél elöl táblázat: cég · bankszámlák (kész / összes) · külföldi számlák (rögzítve / összes) · most betöltve · eredmény.
 
 ## 6. Ütemezett (felügyelet nélküli) futás
