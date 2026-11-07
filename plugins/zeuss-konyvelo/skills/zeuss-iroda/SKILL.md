@@ -33,7 +33,7 @@ Agentnek mindig add át: cég id és név, időszak, a felhasználó pontos kér
 ## 3. Teljes havi kör („csináld meg a hónapot”)
 A sorrend azért ez, mert minden lépés a következő bemenetét tisztítja:
 1. **Anyagok és számlaképek** → `zeuss-anyagbekero` („teljes havi kör része” jelzéssel – ilyenkor nem ment levelet, a tételeket visszaadja): a nem párosított számlaképek besorolása és a bankszámlakivonatok. A számlakép-olvasót külön csak csalásgyanú / NAV-eltérés vizsgálatához indítsd.
-   **1/b. Anyagbetöltés** → `zeuss-anyagbetolto` az anyagbekérő után, bankonként: ami már megjött (hozzárendelt kivonat, kiolvasott külföldi számla), azt betölti és egyezteti, a többi a következő futásra marad – a már betöltött bankokhoz nem nyúl. A hiányzó anyag a 6. lépés levelébe kerül.
+   **1/b. Anyagbetöltés** → `zeuss-anyagbetolto` – nem vár az anyagbekérőre, bármelyik hónap friss anyagát tölti (éjszaka a `zeuss_processing_queue` munkalistája szerint), bankonként: ami már megjött (a kivonatot szükség esetén maga rendeli a bankszámlához, a friss számlaképet maga olvassa ki), azt betölti és egyezteti, a többi a következő futásra marad – a már betöltött bankokhoz nem nyúl. A hiányzó anyag a 6. lépés levelébe kerül.
 2. **Bankpárosítás** → `zeuss-bankparosito` (az 1/b után, mert a betöltött banktételeken dolgozik).
 3. **Kontírozás + szabályok** → `zeuss-kontirozo`.
    A 2–3. lépés független adatkörön dolgozik: ha a környezet engedi, indítsd őket **párhuzamosan**.

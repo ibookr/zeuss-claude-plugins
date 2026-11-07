@@ -5,7 +5,7 @@ description: "A beérkezett havi könyvelési anyag betöltése a Zeussba bankon
 
 # Anyagbetöltés – kivonatok és külföldi számlák a könyvelésbe (Zeuss)
 
-Akkor használd, ha a felhasználó azt kéri, hogy a beérkezett havi anyagot töltsd be: bankszámlakivonatok a főkönyvbe, külföldi számlák rögzítése, utána bankegyeztetés. A `zeuss-anyagbekeres` utáni lépés, de **nem vár a hónap zöld pipájára**: bankonként azt tölti be, ami már megjött. Egy kivonat akkor tölthető, ha az anyagbekérő az adott főkönyvi bankszámlához rendelte; külföldi számla akkor, ha az anyagbekérő már futott a hónapra – ezt a Zeuss is ellenőrzi. Ha 8 bankból 2 kivonata hiányzik, a 6-ot most betöltöd, a 2-t egy későbbi futás – a már betöltött 6-hoz nem nyúl (a Zeuss `already_loaded`-ként csak ellenőrzi, eltérő meglévő tételnél megáll).
+Akkor használd, ha a felhasználó azt kéri, hogy a beérkezett havi anyagot töltsd be: bankszámlakivonatok a főkönyvbe, külföldi számlák rögzítése, utána bankegyeztetés. **Nem vár az anyagbekérőre és nem kötődik egy hónaphoz**: az anyagbekérő az előző hónapra fut (5., 7., 10.), az adatbetöltő viszont minden friss anyagot betölt, bármelyik hónap mappájába került – bankonként azt, ami már megjött. Egy kivonat akkor tölthető, ha egy főkönyvi bankszámlához van rendelve: ezt az anyagbekérő vagy te magad (`zeuss_save_bank_statement_link`) teszed meg. Ha 8 bankból 2 kivonata hiányzik, a 6-ot most betöltöd, a 2-t egy későbbi futás – a már betöltött 6-hoz nem nyúl (a Zeuss `already_loaded`-ként csak ellenőrzi, eltérő meglévő tételnél megáll).
 Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_PLUGIN_ROOT}/skills/zeuss-iroda/references/alapelvek.md` – ez a skill az ott leírt „nem könyvelünk” elv **kifejezett kivétele**: a felhasználó döntése szerint a betöltéshez nem kell jóváhagyás, a kapu a Zeuss beépített ellenőrzése.
 
 ## Alapszabály: kivonat nélkül és ellenőrzés nélkül semmi nem kerül be
@@ -17,13 +17,15 @@ Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_
 - `zeuss_accept_*`, `zeuss_queue_email_draft` – soha.
 
 ## 0. Cég, hónap, futás
-- Cég: amit a felhasználó mond; ha semmi, `zeuss_list_companies` és mind, cégenként külön (párhuzamosítható). Hónap: amit mond, alapból az előző naptári hónap – mondd ki.
+- Ha a felhasználó céget és hónapot mond, azt csinálod. Egyébként **`zeuss_processing_queue`** (alap `days: 31`): cégenként és hónaponként (a feltöltés hónap-mappája szerint, bármelyik hónap) a friss, még fel nem dolgozott anyag – `bank_statements`, `foreign_invoices`, `images_to_classify`, `chat_answered`. **Csak a listában szereplő cég–hónap párokon dolgozol**, cégenként külön (párhuzamosítható); egy cégnél több hónap is lehet – időrendben haladj (a régebbi hónap kivonata kell a következő nyitó egyenlegéhez). Ha a queue eszköz nincs (régebbi Zeuss): cégenként az előző és a folyó hónap.
+- Ha a felhasználó csak céget mond, hónapot nem: a queue sorai közül az ő cégéé; ha nincs ott, az előző naptári hónap – mondd ki.
 - Cégenként `zeuss_start_run` (`task: material_loading`), a végén `zeuss_finish_run` darabszámokkal.
 
 ## 1. Helyzetkép
 `zeuss_processing_status` (`company_id`, `month`):
-- `collection.checked = false` → **állj meg ennél a cégnél**: az anyagbekérő még nem futott (ő rendeli a kivonatokat a bankszámlákhoz). Javasold a `zeuss-anyagbekero` futtatását.
-- `can_load = false`, de az anyagbekérő futott → most nincs új betölthető anyag; a 2–3. lépés kimarad, de a 4. lépést (lezárás) akkor is futtasd, hogy az irányítópult friss legyen.
+- `collection` – csak tájékoztató (futott-e már az anyagbekérő a hónapra); **nem feltétel**, ha `checked = false`, attól még tölthetsz.
+- `unlinked_bank_files` – a hónap banki fájljai (PDF kivonat, CSV / XLS / XLSX / XML tranzakciós lista), amelyeket még senki nem rendelt főkönyvi bankszámlához. **Te rendeled hozzá**, mielőtt betöltenél (lásd lent: „Kivonat hozzárendelése”).
+- `can_load = false` → most nincs új betölthető vagy hozzárendelendő anyag; a 2–3. lépés kimarad, de a 4. lépést (lezárás) akkor is futtasd, hogy az irányítópult friss legyen.
 - `bank_ledgers` – kivonatköteles főkönyvi bankszámlánként a hozzárendelt PDF kivonat(ok) (`statement_files`), tranzakciós adatfájlok (`transaction_list_files`: CSV / XLS / XLSX / XML), a Számlázz.hu banki szinkron tételei a hónapra (`szamlazzhu_sync`: számlaszám, tétel db, összeg, első / utolsó nap – a kivonat / korábbi betöltés számlaszáma alapján), a korábbi betöltések (`loads`, `transactions_source`-szal), a még betöltendő kivonatok (`pending_statement_file_ids`), a hónap le nem fedett napjai (`coverage_gaps`) és az állapot:
   - `ready` → a `pending_statement_file_ids` kivonatait töltsd be (2. lépés);
   - `done` → kész, **ne nyúlj hozzá**;
@@ -66,6 +68,17 @@ A még nyitott kérdést (`open`) **nem kérdezed újra**, és ugyanarra a téte
 - Ha nem sikerült, vagy a válasz alapján is kérdés maradt → `resolution: ask`, `body`: miért nem, mi kell még (új `suggestion` / `options` adható).
 - Ha a válasz tartós szabályt mond (pl. „ennek a partnernek mindig …”), és a könyvelő nem jelölte „Jegyezd meg”-nek, a lezáró üzenetben javasold, hogy vegye fel a Megjegyzések az MI-nek közé – magad nem írsz megjegyzést.
 - Ha a hivatkozott tétel közben rendeződött (pl. a könyvelő kézzel rögzítette a számlát), `close` ezzel a szöveggel.
+
+## Kivonat hozzárendelése (`unlinked_bank_files`)
+Fájlonként döntsd el, melyik főkönyvi bankszámláé – ugyanúgy, ahogy az anyagbekérő:
+1. A jelek: `bank_folder` / `company_bank_account_id` (melyik bank mappájába töltötték), `folder_kind` (Bankszámlakivonatok / Tranzakciós listák), `ocr_excerpt`; ha kell, `zeuss_bank_file_preview` (számlaszám, pénznem, időszak a fájlból) és `zeuss_get_document`.
+2. Összevetés a `bank_ledgers` bankszámláival (`ledger_name`, `currency_hint`, a korábbi betöltések számlaszáma a `loads`-ban) és a `zeuss_ledger_accounts` (`bank_only=1`) listával.
+3. Egyértelmű (számlaszám vagy bank + pénznem egyezik, egyetlen jelölt) → `zeuss_save_bank_statement_link`: `kind: statement` (PDF kivonat) vagy `transaction_list`, `ledger_number_id`, `account_number`, `currency`, `period_from` / `period_to`, ha látszik, `confidence` ≥ 0,7, rövid `note` (mi alapján). Más cég kivonata → `not_our_statement`; nem banki irat → `not_bank_document` / `other`.
+4. **Nem egyértelmű** (több jelölt, nincs illő bankszámla, olvashatatlan) → nem rendeled hozzá (vagy `confidence` 0,5 alatt), és **MI chat-kérdés** a könyvelőnek (`topic_key: bank_file:<file_comment_id>`, javaslattal: melyik bankszámlára tennéd).
+5. Utána `zeuss_processing_status` újra – a hozzárendelt kivonat a bankszámla `pending_statement_file_ids`-ébe kerül, és a 2. lépés szerint tölthető.
+
+## Ki nem olvasott számlaképek (`images_to_classify` a queue-ban)
+A friss, számlával nem párosított bejövő számlaképekről még nem tudni, külföldiek-e. `zeuss_collection_status` (`month`) → `invoice_files` közül azok, amelyeknek nincs `last_check`-je: `zeuss_get_document`, majd `zeuss_save_document_extraction` (a valós típussal: `foreign_invoice`, `invoice`, `proforma`, `unreadable` …). Csak a `foreign_invoice` megy tovább a 3. lépésbe; a magyar számla a NAV-szinkronra vár, nem a te dolgod (a levelet az anyagbekérő írja).
 
 ## 2. Bankszámlakivonatok (csak a `ready` bankszámlák `pending_statement_file_ids` kivonatai; több kivonatnál időrendben)
 A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla elbukik, a többit ettől függetlenül betöltöd. Tranzakciós fájlhoz vagy szinkronhoz, amelyhez nincs hozzárendelt PDF kivonat, nem nyúlsz (`waiting`).
@@ -121,7 +134,7 @@ Több cégnél elöl táblázat: cég · bankszámlák (kész / összes) · kül
 
 ## 6. Ütemezett (felügyelet nélküli, éjszakai) futás
 Senki nem ül a gépnél, ezért a beszélgetésben nem kérdezel. Ami bizonytalan, azt nem töltöd be, hanem **MI chat-kérdést** teszel fel a cég könyvelőjének (`zeuss_chat_post`, `topic_key`-jel), és a `zeuss_processing_finish` `note`-jába is beírod. Sorrend:
-1. `zeuss_office_chat` (`agent: anyagbetolto`) – hol van megválaszolt kérdés; ezeknél a cégeknél akkor is futsz, ha egyébként nem volna új anyag.
-2. Cégenként: `zeuss_processing_status` → a `chat.answered` szálak feldolgozása (végrehajtás + `zeuss_chat_reply`) → 2–3. lépés az új anyagra (külföldi számlából csak az ismert esetet rögzíted) → új kérdések → 4. lépés.
+1. `zeuss_processing_queue` – a munkalista: csak ezeken a cég–hónap párokon dolgozol (`month = null`: csak megválaszolt MI chat-kérdés van, `zeuss_chat_list` `status: answered`). Üres lista → nincs teendő, rövid összefoglaló és vége.
+2. Cégenként, hónaponként időrendben: `zeuss_processing_status` (`month`) → a `chat.answered` szálak feldolgozása (végrehajtás + `zeuss_chat_reply`) → kivonatok hozzárendelése (`unlinked_bank_files`) → számlaképek kiolvasása (`images_to_classify`) → 2–3. lépés (külföldi számlából csak az ismert esetet rögzíted) → új kérdések → 4. lépés az adott hónapra.
 3. Egy cég hibája nem állítja meg a többit. Az összefoglalóban cégenként: hány választ dolgoztál fel, hány új kérdést tettél fel.
 Ha a Zeussban még nincs MI chat (a `chat` blokk hiányzik, vagy a `zeuss_chat_post` `schema_missing` hibát ad), a régi mód szerint: kérdés helyett a `note` és az összefoglaló.
