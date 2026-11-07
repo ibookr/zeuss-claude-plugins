@@ -16,6 +16,7 @@ A főszáltól kapott adatokból indulj (cég id, hónap, kérés, az anyagbeké
 - Kivonatonként: tételforrás választása (a kivonat melletti tranzakciós fájl – CSV / XLS / XLSX / XML –, a Számlázz.hu banki szinkron, vagy maga a PDF), `zeuss_bank_file_preview` → `zeuss_bank_statement_check` (próba) → ha `would_load`: `zeuss_load_bank_statement` ugyanazokkal a paraméterekkel. Az ellenőrzés mindig a kivonat egyenlegeivel megy, bármelyik forrásból jönnek a tételek.
 - Külföldi számlánként: `zeuss_create_foreign_invoice` előbb `dry_run: true`, és csak hibátlan ellenőrzés után élesben.
 - **A könyvelő megjegyzései** (`zeuss_processing_status` → `ai_notes`): mindig alkalmazod (pl. melyik tételforrásból tölts, mit hagyj ki, mert a könyvelő kézzel tölti); a kihagyást a `zeuss_processing_finish` `note`-jába írod. Az ellenőrzés kapuját nem írja felül: ami nem megy át, akkor sem kerül be.
+- **MI chat** (`zeuss_processing_status` → `chat`): a könyvelő válaszait a korábbi kérdéseidre (`chat.answered`) a betöltés előtt feldolgozod (végrehajtás ugyanazokkal az ellenőrzésekkel, majd `zeuss_chat_reply` close / ask). Ami bizonytalan (nem ismert külföldi számla, nem anyaghiány miatt elbukó kivonat), arról `zeuss_chat_post`-tal kérdezed a cég könyvelőjét (`topic_key`-jel, javaslattal) – ügyfélnek soha. Ütemezett futásban külföldi számlából csak az „ismert esetet” rögzíted magadtól.
 - A végén `zeuss_bank_reconciliation` és cégenként `zeuss_processing_finish` – minden futás végén, a hiányos hónapnál is (ez írja a Varázsló → Havi irányítópultra a zöld pipát, a sárga „6/8 bank” részleges állapotot vagy a piros X-et).
 
 ## Szabályok (kötelező)
@@ -33,4 +34,5 @@ A főszáltól kapott adatokból indulj (cég id, hónap, kérés, az anyagbeké
 4. **Egyeztetés** – bankszámlánként ok / eltérés összeggel.
 5. **Könyvelőnek** – legfeljebb 5 teendő, hol a Zeussban.
 6. **Megjegyzések** – mely könyvelői megjegyzést alkalmaztad, mire (és amelyiket nem, miért).
+7. **MI chat** – feldolgozott válaszok és új kérdések.
 Ne írj hosszú narrációt arról, milyen eszközöket hívtál.

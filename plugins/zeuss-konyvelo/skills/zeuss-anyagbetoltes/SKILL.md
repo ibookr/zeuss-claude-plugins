@@ -34,6 +34,7 @@ Eszközök: a `zeuss` MCP szerver `zeuss_*` eszközei. Közös elvek: `${CLAUDE_
 - `foreign_invoice_documents` – a külföldinek kiolvasott számlaképek (`todo` / `recorded` / `failed`); csak a `todo`-val foglalkozol.
 - `summary` – darabszámok (bankok és külföldi számlák állapot szerint).
 - `ai_notes` – **a könyvelő megjegyzései ennél a cégnél** (lásd lent: „A könyvelő megjegyzései”).
+- `chat` – **a könyvelő válaszai a korábbi kérdéseidre** (`chat.answered`) és a még nyitott kérdéseid száma (`chat.open_count`) – lásd lent: „MI chat”. A megválaszolt szálakat **a 2–3. lépés előtt** dolgozd fel.
 
 ## A könyvelő megjegyzései (`ai_notes`)
 A `zeuss_processing_status` → `ai_notes.items`: a könyvelő ennél a cégnél **ma érvényes** utasításai az adatbetöltőnek (Zeuss: MI asszisztens → Megjegyzések az MI-nek) – fix (a törlésig) vagy időszakos (`valid_from`–`valid_to`). Minden futásban olvasd el, és mindegyiket alkalmazd a 2–3. lépésben:
@@ -42,6 +43,29 @@ A `zeuss_processing_status` → `ai_notes.items`: a könyvelő ennél a cégnél
 - **Partner / ÁFA-kód / egyéb rögzítési tudnivaló** külföldi számlához → aszerint töltöd ki (a dry run ellenőrzése ugyanúgy kell).
 - **Nem írja felül** az alapszabályt: kivonat és hibátlan ellenőrzés nélkül semmi nem kerül be; egyenleget, időszakot, összeget a megjegyzés kedvéért sem igazítasz; részleges betöltés nincs; `zeuss_accept_*` / `zeuss_queue_email_draft` soha. Ha egy megjegyzés ilyet kér, nem érthető, vagy ellentmond a kivonatnak, nem alkalmazod, és jelzed a könyvelőnek.
 - Ha nincs `ai_notes` blokk (régebbi Zeuss), `zeuss_ai_notes` (`agent: anyagbetolto`) – ha az sincs, folytasd megjegyzések nélkül.
+
+## MI chat – kérdés a cég könyvelőjének, és a válasz feldolgozása
+Futás közben senkit nem kérdezel meg közvetlenül. Ami a te döntésed szerint bizonytalan, abból **kérdést teszel fel a cég könyvelőjének** a Zeuss MI chatjében (MI asszisztens → MI chat). A könyvelő választ egy opciót és / vagy megjegyzést ír, a következő futásod pedig ez alapján folytatja. **Az ügyfélnek innen semmi nem megy** – ügyfélnek szóló hiányt (pl. hiányzó kivonatoldal) nem itt, hanem az anyagbekérő levelében kell kérni; ezt legfeljebb a könyvelőnek jelzed.
+
+**Kérdés feltevése** – `zeuss_chat_post`:
+- `agent: anyagbetolto`, `period_month`, rövid `title` (cég nélkül, pl. „Google Ireland 2026-10 számla – ÁFA-kód?”), `body`: mit találtál (partner, összeg, pénznem, dátum, mi nem egyezik), és mi a kérdés.
+- `suggestion`: amit tennél, ha a könyvelő jóváhagyja – konkrétan (pl. „rögzítés bejövőként: partner Google Ireland Ltd (IE6388047V), 5xx, ÁFA-kód: közösségi szolgáltatás fordított adózással, nettó 120,00 EUR, MNB 2026-10-31”).
+- `topic_key` **kötelezően**, hogy ne kérdezz kétszer: `foreign_invoice:<file_comment_id>`, `bank_statement:<file_comment_id>`, `bank_ledger:<ledger_number_id>:<ÉÉÉÉ-HH>`. Ha a válasz `unchanged`, nem tettél fel újat; ha `updated`, a meglévő szálba került az új helyzet.
+- `ref_type` / `ref_id` (pl. `file_comment` + id), `options` – csak ha az alapértelmezett („Jó a javaslat, csináld” / „Ezt én intézem”) nem elég (pl. két ÁFA-kód közül választás: két `accept_…` opció). `close: true` csak a „nincs teendőd” jellegű opció.
+
+**Mikor kérdezel** (és nem töltöd be):
+- külföldi számla, ami nem „ismert eset” (lásd 3. lépés), vagy ahol a 3.2 pont szerint nem rögzíthetsz;
+- a kivonat ellenőrzése elbukik, és a hiba nem anyaghiány (pl. `ledger_opening` eltérés, `not_loaded_yet`, nem egyértelmű bankszámla) – a kérdés: hogyan folytassuk; a javaslatod lehet „a könyvelő rendezi a főkönyvet, utána újra próbálom”;
+- egy könyvelői megjegyzés (`ai_notes`) nem érthető, vagy ellentmond a kivonatnak.
+A még nyitott kérdést (`open`) **nem kérdezed újra**, és ugyanarra a tételre addig nem csinálsz semmit.
+
+**Válasz feldolgozása** – `chat.answered` szálanként (vagy `zeuss_chat_list` `status: answered`, több cégnél `zeuss_office_chat`):
+- A válasz a `messages` vége: `author: user`, `option_key` / `option_label` és / vagy `body` (megjegyzés). **A megjegyzés felülírja a javaslatodat** (pl. „nem 5291, hanem 5211”).
+- `accept` (vagy más végrehajtó opció) → végrehajtod a javaslatot **ugyanazokkal az ellenőrzésekkel** (dry run / próba, csak hibátlan ellenőrzés után élesben). A könyvelő jóváhagyása az ellenőrzési kaput nem helyettesíti.
+- Ha sikerült → `zeuss_chat_reply` `resolution: close`, `body`: mit csináltál (pl. „Rögzítve: IE-2026-1031 számla, bruttó 120,00 EUR = 47 640 Ft”).
+- Ha nem sikerült, vagy a válasz alapján is kérdés maradt → `resolution: ask`, `body`: miért nem, mi kell még (új `suggestion` / `options` adható).
+- Ha a válasz tartós szabályt mond (pl. „ennek a partnernek mindig …”), és a könyvelő nem jelölte „Jegyezd meg”-nek, a lezáró üzenetben javasold, hogy vegye fel a Megjegyzések az MI-nek közé – magad nem írsz megjegyzést.
+- Ha a hivatkozott tétel közben rendeződött (pl. a könyvelő kézzel rögzítette a számlát), `close` ezzel a szöveggel.
 
 ## 2. Bankszámlakivonatok (csak a `ready` bankszámlák `pending_statement_file_ids` kivonatai; több kivonatnál időrendben)
 A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla elbukik, a többit ettől függetlenül betöltöd. Tranzakciós fájlhoz vagy szinkronhoz, amelyhez nincs hozzárendelt PDF kivonat, nem nyúlsz (`waiting`).
@@ -67,6 +91,7 @@ A `done` / `partial` / `waiting` bankszámlához nem nyúlsz. Ha egy bankszámla
 
 ## 3. Külföldi számlák
 `zeuss_list_foreign_invoices` (`month`) – `todo` és `failed` dokumentumonként:
+0. **Ismert eset – ütemezett futásban csak ezt rögzíted magadtól.** Ismert eset, ha a partner már szerepel a cégnél (`zeuss_list_partners` + `zeuss_partner_history`: korábbi rögzített számla ugyanettől a partnertől), a most választott ÁFA-kód és tételjelleg ugyanaz, mint a korábbiaké, EU-s partnernél a közösségi adószám megvan és egyezik, és a dry run minden ellenőrzése `ok`. Vagy: egy `ai_notes` megjegyzés kifejezetten megmondja, hogyan rögzítsd. **Minden más esetben** (új partner, eltérő ÁFA-kód, olvashatatlan vagy kétes kép) nem rögzítesz, hanem `zeuss_chat_post`-tal kérdezel, a teljes javaslattal (partner, ÁFA-kód, nettó, pénznem, teljesítés). Ha a felhasználó a beszélgetésben maga kéri a rögzítést, a 1–6. pont szerint haladsz.
 1. Ha a kiolvasott adat (`extracted`) hiányos, nyisd meg a képet (`zeuss_get_document`), és mentsd az olvasatot: `zeuss_save_document_extraction` (`document_type: foreign_invoice`, a képen látott mezők).
 2. **Mindig bejövő (költség) számla.** Nem rögzítesz, csak jelzed a könyvelőnek, ha:
    - az eladó magyar vagy magyar adószámos (akkor a NAV-ban kell lennie);
@@ -91,7 +116,12 @@ Cégenként:
 - **Egyeztetés**: bankszámlánként ok / eltérés összeggel
 - **Könyvelőnek**: legfeljebb 5 teendő, hol a Zeussban (Banktételek, Banknyilvántartás, Dokumentumok)
 - **Megjegyzések**: hány könyvelői megjegyzést alkalmaztál, mire; amelyiket nem tudtad alkalmazni, miért
+- **MI chat**: feldolgozott válaszok (mi lett belőlük) és új kérdések (tárgy) – a könyvelő az MI asszisztens → MI chat oldalon válaszol
 Több cégnél elöl táblázat: cég · bankszámlák (kész / összes) · külföldi számlák (rögzítve / összes) · most betöltve · eredmény.
 
-## 6. Ütemezett (felügyelet nélküli) futás
-Senki nem ül a gépnél: kérdést nem teszel fel; ami bizonytalan, azt nem töltöd be, hanem a `zeuss_processing_finish` `note`-jába és az összefoglalóba írod. Egy cég hibája nem állítja meg a többit.
+## 6. Ütemezett (felügyelet nélküli, éjszakai) futás
+Senki nem ül a gépnél, ezért a beszélgetésben nem kérdezel. Ami bizonytalan, azt nem töltöd be, hanem **MI chat-kérdést** teszel fel a cég könyvelőjének (`zeuss_chat_post`, `topic_key`-jel), és a `zeuss_processing_finish` `note`-jába is beírod. Sorrend:
+1. `zeuss_office_chat` (`agent: anyagbetolto`) – hol van megválaszolt kérdés; ezeknél a cégeknél akkor is futsz, ha egyébként nem volna új anyag.
+2. Cégenként: `zeuss_processing_status` → a `chat.answered` szálak feldolgozása (végrehajtás + `zeuss_chat_reply`) → 2–3. lépés az új anyagra (külföldi számlából csak az ismert esetet rögzíted) → új kérdések → 4. lépés.
+3. Egy cég hibája nem állítja meg a többit. Az összefoglalóban cégenként: hány választ dolgoztál fel, hány új kérdést tettél fel.
+Ha a Zeussban még nincs MI chat (a `chat` blokk hiányzik, vagy a `zeuss_chat_post` `schema_missing` hibát ad), a régi mód szerint: kérdés helyett a `note` és az összefoglaló.
