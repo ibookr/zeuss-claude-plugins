@@ -60,6 +60,15 @@ Futás közben senkit nem kérdezel meg közvetlenül. Ami a te döntésed szeri
 - a kivonat ellenőrzése elbukik, és a hiba nem anyaghiány (pl. `ledger_opening` eltérés, `not_loaded_yet`, nem egyértelmű bankszámla) – a kérdés: hogyan folytassuk; a javaslatod lehet „a könyvelő rendezi a főkönyvet, utána újra próbálom”;
 - egy könyvelői megjegyzés (`ai_notes`) nem érthető, vagy ellentmond a kivonatnak.
 A még nyitott kérdést (`open`) **nem kérdezed újra**, és ugyanarra a tételre addig nem csinálsz semmit.
+Ha a kérdés oka az, hogy valamit nem tudsz megtenni (pl. a kivonat ellenőrzése elbukik, ezért nem töltötted be), add meg az `outcome: blocked`-ot is (piros jelölés a könyvelőnél); a sima kérdésnél az `outcome` marad üres.
+
+**Beszámoló a sikeres betöltésekről** – `zeuss_chat_post` `outcome: done`:
+Minden **élesben** sikeres betöltés után (a próba / `dry_run` nem számít) egy beszámolót küldesz a cég könyvelőjének. Ez nem kérdés: a szál azonnal lezárva jön létre, és a könyvelő az MI chat **„Sikeresen elvégzett”** fülén látja – válaszolni nem kell rá.
+- Bankszámlakivonatonként egy (`zeuss_load_bank_statement` `status = loaded`): `agent: anyagbetolto`, `outcome: done`, `period_month`, `topic_key: loaded:bank_statement:<file_comment_id>`, `ref_type: file_comment`, `ref_id: <file_comment_id>`, `title` pl. „OTP HUF 2026-10 kivonat betöltve”, `body`: főkönyvi bankszámla, kivonat (fájlnév), tételforrás (PDF / tranzakciós fájl neve / Számlázz.hu szinkron), tétel db, nyitó → záró egyenleg, és hogy a főkönyvvel egyezik.
+- Külföldi számlánként egy (`zeuss_create_foreign_invoice` éles rögzítés): `topic_key: loaded:foreign_invoice:<file_comment_id>`, `title` pl. „Google Ireland IE-2026-1031 rögzítve”, `body`: partner (közösségi adószám), számlaszám, teljesítés, nettó / bruttó a számla pénznemében, MNB-árfolyam, forintösszeg, ÁFA-kód.
+- `already_loaded` / már korábban rögzített tételről **nem** küldesz beszámolót (a `topic_key` miatt a Zeuss amúgy is `unchanged`-et ad rá).
+- Ha a betöltés egy megválaszolt kérdés (`chat.answered`) alapján történt, nem küldesz külön beszámolót: a `zeuss_chat_reply` `resolution: close` (alapból `done`) ugyanezt a szálat teszi a „Sikeresen elvégzett” fülre.
+- Ha ugyanarra a tételre még nyitott kérdésed volt (pl. a könyvelő közben kézzel rendezte a főkönyvet, és most átment), azt a szálat zárd le `zeuss_chat_reply` `resolution: close`-zal a beszámoló szövegével – külön beszámolót ilyenkor nem küldesz.
 
 **Válasz feldolgozása** – `chat.answered` szálanként (vagy `zeuss_chat_list` `status: answered`, több cégnél `zeuss_office_chat`):
 - A válasz a `messages` vége: `author: user`, `option_key` / `option_label` és / vagy `body` (megjegyzés). **A megjegyzés felülírja a javaslatodat** (pl. „nem 5291, hanem 5211”).
@@ -129,12 +138,12 @@ Cégenként:
 - **Egyeztetés**: bankszámlánként ok / eltérés összeggel
 - **Könyvelőnek**: legfeljebb 5 teendő, hol a Zeussban (Banktételek, Banknyilvántartás, Dokumentumok)
 - **Megjegyzések**: hány könyvelői megjegyzést alkalmaztál, mire; amelyiket nem tudtad alkalmazni, miért
-- **MI chat**: feldolgozott válaszok (mi lett belőlük) és új kérdések (tárgy) – a könyvelő az MI asszisztens → MI chat oldalon válaszol
+- **MI chat**: feldolgozott válaszok (mi lett belőlük), új kérdések (tárgy) és elküldött beszámolók (db) – a könyvelő az MI asszisztens → MI chat oldalon válaszol, a beszámolókat a „Sikeresen elvégzett” fülön látja
 Több cégnél elöl táblázat: cég · bankszámlák (kész / összes) · külföldi számlák (rögzítve / összes) · most betöltve · eredmény.
 
 ## 6. Ütemezett (felügyelet nélküli, éjszakai) futás
 Senki nem ül a gépnél, ezért a beszélgetésben nem kérdezel. Ami bizonytalan, azt nem töltöd be, hanem **MI chat-kérdést** teszel fel a cég könyvelőjének (`zeuss_chat_post`, `topic_key`-jel), és a `zeuss_processing_finish` `note`-jába is beírod. Sorrend:
 1. `zeuss_processing_queue` – a munkalista: csak ezeken a cég–hónap párokon dolgozol (`month = null`: csak megválaszolt MI chat-kérdés van, `zeuss_chat_list` `status: answered`). Üres lista → nincs teendő, rövid összefoglaló és vége.
-2. Cégenként, hónaponként időrendben: `zeuss_processing_status` (`month`) → a `chat.answered` szálak feldolgozása (végrehajtás + `zeuss_chat_reply`) → kivonatok hozzárendelése (`unlinked_bank_files`) → számlaképek kiolvasása (`images_to_classify`) → 2–3. lépés (külföldi számlából csak az ismert esetet rögzíted) → új kérdések → 4. lépés az adott hónapra.
-3. Egy cég hibája nem állítja meg a többit. Az összefoglalóban cégenként: hány választ dolgoztál fel, hány új kérdést tettél fel.
+2. Cégenként, hónaponként időrendben: `zeuss_processing_status` (`month`) → a `chat.answered` szálak feldolgozása (végrehajtás + `zeuss_chat_reply`) → kivonatok hozzárendelése (`unlinked_bank_files`) → számlaképek kiolvasása (`images_to_classify`) → 2–3. lépés (külföldi számlából csak az ismert esetet rögzíted; minden éles betöltés után `done` beszámoló) → új kérdések → 4. lépés az adott hónapra.
+3. Egy cég hibája nem állítja meg a többit. Az összefoglalóban cégenként: hány választ dolgoztál fel, hány új kérdést tettél fel, hány beszámolót küldtél.
 Ha a Zeussban még nincs MI chat (a `chat` blokk hiányzik, vagy a `zeuss_chat_post` `schema_missing` hibát ad), a régi mód szerint: kérdés helyett a `note` és az összefoglaló.
