@@ -1,6 +1,6 @@
 ---
 name: "zeuss-nyitas"
-description: "Nyitás a Zeussban egy cégnél: a nyitott vevő–szállító számlák (egy vagy több fájl) és a nyitó napló importja a cég Nyitas mappájából (uploads/<cég>/Nyitas). Formátum-felismerés (RLB, könyvelőprogramok importformátumai), szükség esetén átalakítás Zeuss formátumra; egyeztetés főkönyvi számonként (31x vevő, 454x szállító: vevő–szállító nyitott összeg = bruttó − rendezett ↔ nyitó napló egyenleg); csak hibátlan egyezés után importál – előbb a vevő–szállító számlákat (NAV szinkron, partnerek, könyvelés), majd a nyitó naplót (partnerválasztás / -létrehozás). Jóváhagyást nem kér; csak forint."
+description: "Nyitás a Zeussban egy cégnél: a nyitott vevő–szállító számlák (egy vagy több fájl) és a nyitó napló importja a cég Nyitas mappájából (uploads/<cég>/Nyitas). Formátum-felismerés (RLB, könyvelőprogramok importformátumai), szükség esetén átalakítás Zeuss formátumra; egyeztetés főkönyvi számonként (31x vevő, 454x szállító: vevő–szállító nyitott összeg = bruttó − rendezett ↔ nyitó napló egyenleg); csak hibátlan egyezés után importál – előbb a vevő–szállító számlákat (NAV szinkron, partnerek, könyvelés), majd a nyitó naplót (partnerválasztás / -létrehozás). Jóváhagyást nem kér; devizás vevő–szállító számla is mehet (forintértékkel egyeztetve)."
 ---
 
 # Nyitás – nyitott vevő–szállító számlák + nyitó napló (Zeuss)
@@ -13,7 +13,7 @@ Akkor használd, ha a felhasználó egy vagy több cégnél a nyitást kéri. Es
   - szállító (454x, pl. 4541): Σ(bruttó − rendezett) = a napló K − T egyenlege; jóváíró számla negatív.
   - A főkönyvi szám a fájlból jön; ha a fájlban nincs, vevőnél 311, szállítónál 4541 (vagy amit a `ledger_code` megad).
 - Ha nem egyezik: **nem importálsz**, nem igazítod az adatot. Leírod főkönyvi számonként az eltérést, és ha látszik az oka (hiányzó fájl, rendezett oszlop, más főkönyvi szám, eltérő dátum), azt is.
-- Csak forint. Devizás számla vagy tétel → megállsz, jelzed.
+- Devizás vevő–szállító számla is importálható: a kimenőket a Zeuss a NAV-ból tölti le, a bejövőket létrehozza (deviza, devizaösszeg, árfolyam). Az egyeztetésben a devizás számla a **forintértékével** (bruttó Ft − rendezett Ft) szerepel; a nyitó napló forintos.
 - `zeuss_accept_*`, `zeuss_queue_email_draft` – soha.
 
 ## 0. Cég, futás
@@ -34,6 +34,7 @@ Akkor használd, ha a felhasználó egy vagy több cégnél a nyitást kéri. Es
     - `vszfsz`: a fájl főkönyvi száma (31x / 454x); ha nincs, vevő 311, szállító 4541;
     - `telj`: teljesítés `ÉÉÉÉ-HH-NN`; `bruttossz`: bruttó Ft (jóváíró negatív); `rendezve`: a fordulónapig kiegyenlített rész (üres = 0), **nem** a nyitott összeg – ha a forrásban csak nyitott / hátralék van, `rendezve = bruttó − nyitott`;
     - opcionális: `kelt`, `fizhat`, `megjegyzes`.
+    - devizás számlánál még: `devnem` (pl. EUR), `ertek` (bruttó devizában, kötelező), `arfolyam`, `devrend` (rendezett rész devizában); `bruttossz` és `rendezve` ilyenkor is forintban (a forrás forintértéke, vagy devizaösszeg × árfolyam, ha a forrás csak devizát ad – ezt jelezd).
   - nyitó napló (pontosvesszős CSV, UTF-8): `Dátum;Főkönyvi szám;Ellenszámla;Tartozik;Követel;Partner neve;Megjegyzés` – soronként a főkönyvi szám az ellenszámlával szemben (jellemzően 491), az összeg a Tartozik vagy a Követel oszlopban; egyenleglistából: T-egyenleg → Tartozik, K-egyenleg → Követel, ellenszámla 491.
   - Fájlnév: `<eredeti név>_zeuss.csv`; `zeuss_opening_upload_file` (base64), majd ezzel a `file_comment_id`-val és `format: zeuss` dolgozol. Az eredeti fájl marad. A visszatérésben jelezd, melyik fájlt alakítottad át és hogyan.
   - Átalakítás után futtasd újra a `zeuss_opening_file_preview`-t az új fájlra: a tételszám és az `open_by_ledger` egyezzen a forrással.
@@ -45,7 +46,7 @@ Nézd végig a `checks`-et (mind `ok` kell):
   - Gyakori ok: hiányzik egy vevő–szállító fájl (pl. csak a vevők jöttek), más főkönyvi számon van a fájl (`ledger_code`-dal adható meg, ha a forrásban egyértelmű), a rendezett összeg nem a fordulónapig szól. Csak akkor módosítasz paramétert, ha a forrásból egyértelmű; egyébként könyvelőnek szóló hiba.
 - `customer_supplier_parsed`, `journal_parsed` – olvasási hiba / hibás sor (hiányzó dátum, főkönyvi szám). Hibás forrásnál nincs import.
 - `opening_date` – a nyitó tételek dátuma egységes legyen.
-- `huf_only` – devizás számla → megállsz.
+- `currency` – tájékoztató: a devizás számlák darabszáma és összege pénznemenként (devizában és forintban). Nem állít meg; a visszatérésben említsd meg.
 - `ledger_accounts` – hiányzó főkönyvi szám: ha a szülője megvan (a check megmondja), `create_missing_accounts: true`-val a cég sablonjában létrejön; ha nem hozható létre → könyvelőnek szóló hiba. `postable` – gyűjtőszámlára nem lehet nyitni.
 - `journal_not_loaded_yet` – az évre már eltérő nyitó tételek vannak → megállsz.
 - `journal_partners` – a nyitó napló partnerdöntései (`journal.partner_plan`):

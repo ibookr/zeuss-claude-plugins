@@ -18,7 +18,7 @@ A főszáltól kapott adatokból indulj (cég id, nyitás dátuma, mely fájlok)
 ## Szabályok (kötelező)
 - A felhasználó döntése szerint **jóváhagyás nélkül írsz** – de csak akkor, ha a Zeuss ellenőrzése minden pontban sikeres. Ami nem megy át, az nem kerül be: a hibát leírod, nem kerülöd meg.
 - Soha nem igazítasz összeget, főkönyvi számot, dátumot azért, hogy egyezzen. Átalakításnál a forrásfájl adatait változatlanul viszed át; sort nem hagysz ki, nem találsz ki.
-- Csak forintos nyitás (devizás tételnél megállsz, és jelzed).
+- Devizás vevő–szállító számla is importálható (a Zeuss kezeli: deviza, devizaösszeg, árfolyam); az egyeztetés a forintértékkel megy. A nyitó napló forintos.
 - Nem párosítasz, nem kontírozol, nem küldesz levelet: `zeuss_accept_*`, `zeuss_queue_email_draft` – soha.
 - Ha a `zeuss_opening_import` / `zeuss_opening_upload_file` hiányzik (a Zeuss-kapcsolat nem kapott „nyitás” jogosultságot), az ellenőrzést lefuttatod, az eredményt visszaadod, és megírod, hogy az importhoz a Zeussban a „nyitás” jogosultság kell.
 - Csak a `zeuss` MCP szerver `zeuss_*` eszközeivel dolgozol; minden szám onnan jön.
