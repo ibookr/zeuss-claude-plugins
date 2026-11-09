@@ -40,14 +40,18 @@ Akkor használd, ha a felhasználó egy vagy több cégnél a nyitást kéri. Es
   - Átalakítás után futtasd újra a `zeuss_opening_file_preview`-t az új fájlra: a tételszám és az `open_by_ledger` egyezzen a forrással.
 
 ## 3. Ellenőrzés – `zeuss_opening_check` (írás nélkül)
-Paraméterek: `customer_supplier_files` (egy vagy több `{file_comment_id | files, format, direction?, ledger_code?}`), `journal_file` (`{file_comment_id, format}`), `opening_date` (alap: a nyitó tételek dátuma), szükség szerint `create_missing_accounts`, `journal_partners`, `run_id`.
+Paraméterek: `customer_supplier_files` (egy vagy több `{file_comment_id | files, format, direction?, ledger_code?}`), `journal_file` (`{file_comment_id, format}`), `opening_date` (alap: a nyitó tételek dátuma), szükség szerint `create_missing_accounts`, `account_names`, `journal_partners`, `run_id`.
 Nézd végig a `checks`-et (mind `ok` kell):
 - `reconciliation` – a lényeg; a `reconciliation` táblában főkönyvi számonként a két oldal és az eltérés. Eltérésnél: nincs import.
   - Gyakori ok: hiányzik egy vevő–szállító fájl (pl. csak a vevők jöttek), más főkönyvi számon van a fájl (`ledger_code`-dal adható meg, ha a forrásban egyértelmű), a rendezett összeg nem a fordulónapig szól. Csak akkor módosítasz paramétert, ha a forrásból egyértelmű; egyébként könyvelőnek szóló hiba.
 - `customer_supplier_parsed`, `journal_parsed` – olvasási hiba / hibás sor (hiányzó dátum, főkönyvi szám). Hibás forrásnál nincs import.
 - `opening_date` – a nyitó tételek dátuma egységes legyen.
 - `currency` – tájékoztató: a devizás számlák darabszáma és összege pénznemenként (devizában és forintban). Nem állít meg; a visszatérésben említsd meg.
-- `ledger_accounts` – hiányzó főkönyvi szám: ha a szülője megvan (a check megmondja), `create_missing_accounts: true`-val a cég sablonjában létrejön; ha nem hozható létre → könyvelőnek szóló hiba. `postable` – gyűjtőszámlára nem lehet nyitni.
+- `ledger_accounts` – a nyitó naplóban (vagy a vevő–szállító fájlban) olyan főkönyvi szám van, ami a cég számlatükrében még nincs. Ilyenkor **létre kell hozni**, ahogy a Zeuss Számlatükör oldalán (`ledger_manage.php`) is:
+  - `create_missing_accounts: true` – a Zeuss a cég **számlatükör sablonjában** hozza létre, a hiányzó **szülő szintekkel együtt** (pl. 46611-hez a 4661-et is, ha az sincs), az első meglévő ős alá. Ha a cégnek még **nincs sablonja**, előbb létrehoz egyet a cég nevével („<cég> – számlatükör”), és a céghez rendeli. A check kiírja: mi hiányzik (`missing_accounts`), mely szülők jönnek létre (`parent_accounts`), mely meglévő szám válik gyűjtőszámlává (`new_summary_accounts`), és melyik sablonba.
+  - `account_names` – az új számok neve a forrásfájl szerint, ha ott van (egyenleglista, főkönyvi kivonat, számlatükör a fájlban): `{"4661": "…", "46611": "…"}`. Ne találj ki nevet: ha a forrásban nincs, hagyd ki – akkor a napló megjegyzése, különben „Nyitó import <szám>” lesz, és a visszatérésben jelezd, hogy a könyvelő nevezze át.
+  - Nem hozható létre (könyvelőnek szóló hiba, nem kerülöd meg): ha az ős „nem bontható” vagy banki számla (pl. 466, 311, 4541 alá nem nyitható alszámla); ha az ős most válna gyűjtőszámlává, de a sablont használó valamelyik cégnél már van rajta könyvelés vagy beállítás (ezt a Számlatükör oldalon, átvezetéssel kell megcsinálni); ha a nyitó napló maga is a gyűjtővé váló számra könyvel. Ilyenkor ne írd át a főkönyvi számot a fájlban – a könyvelő dönt.
+- `postable` – gyűjtőszámlára (aminek alszámlái vannak) nem lehet nyitni: a forrás egy alszámláját kell használni, ezt a könyvelőnek jelezd.
 - `journal_not_loaded_yet` – az évre már eltérő nyitó tételek vannak → megállsz.
 - `journal_partners` – a nyitó napló partnerdöntései (`journal.partner_plan`):
   - a Zeuss magától dönt: adószám (a vevő–szállító fájlból) → meglévő partner; pontos névegyezés → meglévő; a vevő–szállító import által létrehozott partner; 31x / 454x soron, ha nincs hasonló partner → **új partner**;

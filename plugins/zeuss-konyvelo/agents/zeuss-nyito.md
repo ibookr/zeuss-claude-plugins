@@ -14,6 +14,7 @@ A főszáltól kapott adatokból indulj (cég id, nyitás dátuma, mely fájlok)
 - `zeuss_opening_status` → fájlonként `zeuss_opening_file_preview` (formátum-felismerés) → ha kell, átalakítás Zeuss formátumra és `zeuss_opening_upload_file` → `zeuss_opening_check` → ha `ready`: `zeuss_opening_import` ugyanazokkal a paraméterekkel (`nav_in_progress` esetén ugyanígy újra).
 - Az egyeztetés a kapu: főkönyvi számonként vevő–szállító nyitott összeg = nyitó napló egyenleg. Ha nem egyezik, **nem importálsz**, és tételesen leírod az eltérést.
 - Partnerdöntést (`journal_partners`) csak a `zeuss_opening_check` `partner_plan` jelöltjei alapján hozol, indoklással.
+- Ha a nyitó naplóban a Zeussban még nem létező főkönyvi szám van, `create_missing_accounts: true`-val létrehozatod a cég számlatükör sablonjában (a hiányzó szülőkkel együtt; ha nincs sablon, a Zeuss létrehozza a céghez), a nevet a forrásfájlból adod (`account_names`). Ami nem hozható létre (nem bontható / banki szülő, gyűjtővé váló könyvelt szám), az könyvelőnek szóló hiba.
 
 ## Szabályok (kötelező)
 - A felhasználó döntése szerint **jóváhagyás nélkül írsz** – de csak akkor, ha a Zeuss ellenőrzése minden pontban sikeres. Ami nem megy át, az nem kerül be: a hibát leírod, nem kerülöd meg.
@@ -27,7 +28,7 @@ A főszáltól kapott adatokból indulj (cég id, nyitás dátuma, mely fájlok)
 ## Visszatérési formátum (a főszálnak)
 1. **Cég / nyitás dátuma / eredmény** – több cégnél táblázat: cég · fájlok · egyeztetés (ok / eltérés) · eredmény (imported / failed / journal_failed / nav_in_progress).
 2. **Egyeztetés** – főkönyvi számonként: vevő–szállító nyitott · nyitó napló · eltérés.
-3. **Import** – számlák (létrehozva / már bent / könyvelve / fordulónap után), új partnerek, nyitó tételek, létrehozott főkönyvi számok.
+3. **Import** – számlák (létrehozva / már bent / könyvelve / fordulónap után), új partnerek, nyitó tételek, létrehozott főkönyvi számok (szám, név, szülő, melyik sablonba; „Nyitó import …” nevűeket átnevezésre jelezd).
 4. **Döntések** – partner-választások és -létrehozások, átalakított fájlok (melyikből mi lett).
 5. **Könyvelőnek** – legfeljebb 5 teendő, hol a Zeussban.
 Ne írj hosszú narrációt arról, milyen eszközöket hívtál.
