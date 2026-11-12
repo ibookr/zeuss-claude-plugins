@@ -54,7 +54,7 @@ A `detected` megmondja, mely importálók olvassák be a fájlt (type + format, 
 - Fájlnév: `<eredeti név>_zeuss.csv` (a vevő / szállító szó maradjon a névben); `zeuss_opening_upload_file`, majd újra `zeuss_opening_file_preview`: a tételszám és az `open_by_ledger` egyezzen a forrással. Az eredeti fájl marad.
 
 ## 3. Ellenőrzés – `zeuss_opening_check` (írás nélkül)
-Paraméterek: `customer_supplier_files` (egy vagy több `{file_comment_id | files, format, direction?, ledger_code?}`), `journal_file` (`{file_comment_id, format, sheet?, account_map?}`), `opening_date`, szükség szerint `create_missing_accounts`, `account_names`, `journal_partners`, `after_cutoff_invoices`, `run_id`.
+Paraméterek: `customer_supplier_files` (egy vagy több `{file_comment_id | files, format, direction?, ledger_code?}`), `journal_file` (`{file_comment_id, format, sheet?, account_map?}`), `opening_date`, szükség szerint `create_missing_accounts`, `account_names`, `journal_partners`, `after_cutoff_invoices`, `accept_journal_imbalance`, `run_id`.
 
 Nézd végig a `checks`-et (mind `ok` kell). Hogy mi a te döntésed és mi a könyvelőé:
 
@@ -62,7 +62,8 @@ Nézd végig a `checks`-et (mind `ok` kell). Hogy mi a te döntésed és mi a k�
 |---|---|---|
 | `reconciliation` | főkönyvi számonként a két oldal és az eltérés | senki: eltérésnél nincs import, leírod |
 | `customer_supplier_parsed`, `journal_parsed` | olvasási hiba / hibás sor | senki: hibás forrásnál nincs import |
-| `unbilled_items` | számla nélküli tételek listája (tájékoztató) | – (a visszatérésben felsorolod) |
+| `unbilled_items` | számla nélküli tételek listája: túlfizetés / előleg, kerekítés, vevő-értékvesztés (319) (tájékoztató) | – (a visszatérésben felsorolod) |
+| `journal_balanced` | a nyitó napló fájljában a tartozik ≠ követel – a különbözet az ellenszámlán (491) maradna | **a könyvelő** |
 | `after_cutoff_invoices` | a nyitott listában fordulónapon / utána teljesített számla van | **a könyvelő** |
 | `nav_differences` | a fájl és a Zeussban lévő (NAV-os) számla eltér | `block`: **a könyvelő**; a többi tájékoztató |
 | `account_map_names` | a fordítás célszámának neve más, mint a forrásé | **te**, a nevek alapján; ha nem egyértelmű, a könyvelő |
@@ -77,6 +78,7 @@ Részletek:
 
 - **`reconciliation`** – gyakori ok: hiányzik egy vevő–szállító fájl, más főkönyvi számon van a fájl, a rendezett összeg nem a fordulónapig szól. Csak akkor módosítasz paramétert, ha a forrásból egyértelmű; egyébként könyvelőnek szóló hiba.
 - **`after_cutoff_invoices`** – pl. időszakos elszámolású számla (a teljesítés a fizetési határidő), amit a régi program már lekönyvelt. **Nem döntesz helyette**: megkérdezed a könyvelőt (MI chat, 5. lépés), és a válasza szerint adod meg: `opening` = a régi programban már le volt könyvelve, a nyitó napló egyenlege tartalmazza (nyitó tételként megy, az ÁFA-ját a teljesítés hónapjában a könyvelő rendezi); `defer` = nincs a nyitó egyenlegben, a Zeussban kell majd lekönyvelni (az egyeztetésből kimarad). Támpont a kérdéshez: ha a számlákkal együtt egyezik az egyeztetés, a napló tartalmazza őket – ezt írd bele a javaslatba.
+- **`journal_balanced`** – a forrásfájl (pl. Kulcs főkönyvi összesítő) nem egyenlő: import után a különbözet a 491-en maradna, a nyitómérleg nem zárna. **Nem javítod ki a fájlt, és nem döntesz helyette**: megkérdezed a könyvelőt (MI chat, 5. lépés). Ha javítja a forrást (pl. kerekítési sorral), az új fájllal futtatod; ha kifejezetten azt kéri, hogy így menjen, `accept_journal_imbalance: true`-val (a visszatérésben jelzed, hogy a 491-en maradt összeg rendezendő).
 - **`nav_differences`** – a Zeuss a fájl sorát számlaszám + irány alapján párosítja a már bent lévő számlával. `apply`: devizás számla árfolyama / forintértéke eltér – a nyitás a **fájl** értékét írja a számlára (pl. év végén átértékelt árfolyam), ezt a visszatérésben felsorolod. `info`: pl. a fájlban más adószám áll, mint a számlán – a számla és a nyitó napló sora a számla partnerén lesz. `block`: más előjel, pénznem vagy összeg – a két adat nem ugyanarról a bizonylatról szól; **megállsz**, a könyvelő tisztázza (nem írod át a fájlt). A NAV-ra váró számlákat a Zeuss az import közben, a letöltés után veti össze.
 - **`account_map_names`** – a Zeuss a forrásprogram főkönyvi számait maga fordítja (`journal.account_map`, részletek: `journal.account_map_details`: szabály, a cél neve, `name_match`, `suggestions`). Ahol `name_match = differs`, nézd meg a két nevet:
   - ugyanazt jelenti, csak a megfogalmazás más (pl. „Jövedelemelszámolási számla” ↔ „Keresetelszámolási számla”) → erősítsd meg ugyanazzal a céllal: `journal_file.account_map: {"47100": "4711"}`;
@@ -105,6 +107,7 @@ Futás közben senkit nem kérdezel meg közvetlenül, és **nem adsz hibát ott
 - `nav_differences` `block` → `opening:nav_difference:<számlaszám>`; mit mond a fájl és mit a Zeuss.
 - `account_map_names`, ha nem egyértelmű → `opening:account_map:<forrásszám>`; a forrás neve, a cél neve, a jelöltek opcióként.
 - gyűjtő-ütközés, nem létrehozható főkönyvi szám → `opening:ledger:<szám>`.
+- `journal_balanced` → `topic_key: opening:journal_balance:<nyitás dátuma>`; a `body`-ban a fájl tartozik és követel összege és a különbözet; `options`: „Javítom a forrásfájlt” / „Így menjen, a különbözet a 491-en marad”; a `suggestion` a fájl javítása.
 - egyeztetési eltérés, aminek az oka nem látszik → `opening:reconciliation:<főkönyvi szám>`, `outcome: blocked`.
 
 A még nyitott kérdést nem kérdezed újra. A megválaszolt szálat a következő futás elején dolgozod fel: a válasz szerinti paraméterrel futtatod a checket / importot, majd `zeuss_chat_reply` `resolution: close`, a `body`-ban azzal, amit csináltál. Sikeres import után rövid beszámoló: `zeuss_chat_post` `outcome: done`.
